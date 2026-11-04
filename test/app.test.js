@@ -26,18 +26,23 @@ test('home e ricerca rispondono con i professionisti', async () => {
   const home = await request(app).get('/');
   assert.equal(home.status, 200);
   assert.match(home.text, /I più apprezzati/);
-  const res = await request(app).get('/cerca?q=GDPR');
-  assert.match(res.text, /Davide Romano/);
+  const res = await request(app).get('/cerca?q=patentino');
+  assert.match(res.text, /Luca Bianchi/);
   assert.doesNotMatch(res.text, /Giulia Ferraro/);
 });
 
 test('filtri di ricerca: categoria, modalità, rating minimo, ordinamento', () => {
-  const r = M.search(db, { category: 'sicurezza-lavoro' });
-  assert.ok(r.total >= 2);
+  const r = M.search(db, { category: 'finanza-agevolata' });
+  assert.ok(r.total >= 3);
+  const pratiche = M.search(db, { type: 'pratiche' }).results;
+  assert.ok(pratiche.length && pratiche.every((p) => p.serviceTypeList.includes('pratiche')));
+  const api = M.search(db, { sector: 'apicoltura' }).results;
+  assert.ok(api.some((p) => p.name === 'Nicola Ferri'));
+  assert.ok(api.every((p) => p.sectorList.some((x) => x.slug === 'apicoltura')));
   assert.ok(M.search(db, { mode: 'remoto' }).results.every((p) => p.mode !== 'presenza'));
   assert.ok(M.search(db, { minRating: 4.5 }).results.every((p) => p.avg_rating >= 4.5));
-  const cheap = M.search(db, { sort: 'prezzo_asc' }).results;
-  assert.ok(cheap[0].daily_rate <= cheap[1].daily_rate);
+  const exp = M.search(db, { sort: 'esperienza' }).results;
+  assert.ok(exp[0].years_experience >= exp[1].years_experience);
 });
 
 test('profilo pubblico con riepilogo valutazioni', async () => {
@@ -45,6 +50,8 @@ test('profilo pubblico con riepilogo valutazioni', async () => {
   assert.equal(res.status, 200);
   assert.match(res.text, /Valutazioni dei committenti/);
   assert.match(res.text, /Puntualità/);
+  assert.match(res.text, /Servizi e listino/);
+  assert.match(res.text, /Domanda di sostegno CSR/);
   assert.equal((await request(app).get('/professionisti/inesistente')).status, 404);
 });
 
@@ -54,11 +61,11 @@ test('POST senza CSRF viene rifiutato', async () => {
 });
 
 test('flusso completo: richiesta → accettazione → completamento → recensione', async () => {
-  const client = await agentLoggedAs('laura@acme-spa.it');
+  const client = await agentLoggedAs('laura@lequerce.it');
   let res = await client.agent.post('/professionisti/martina-de-luca/richiesta').type('form')
-    .send({ _csrf: client.csrf, title: 'Corso Excel avanzato', days: '2', mode: 'remoto' });
+    .send({ _csrf: client.csrf, title: 'Corso HACCP per 3 dipendenti', days: '2', mode: 'remoto' });
   assert.equal(res.status, 302);
-  const reqRow = db.prepare("SELECT id, status FROM requests WHERE title = 'Corso Excel avanzato'").get();
+  const reqRow = db.prepare("SELECT id, status FROM requests WHERE title = 'Corso HACCP per 3 dipendenti'").get();
   assert.equal(reqRow.status, 'in_attesa');
 
   // Il committente non può accettare la propria richiesta.
@@ -77,7 +84,7 @@ test('flusso completo: richiesta → accettazione → completamento → recensio
   const before = M.getBySlug(db, 'martina-de-luca').review_count;
   res = await client.agent.post(`/richieste/${reqRow.id}/recensione`).type('form').send({
     _csrf: client.csrf, competenza: '5', comunicazione: '5', puntualita: '4', qualita_prezzo: '5', professionalita: '5',
-    title: 'Top', pros: 'Corso pratico e molto chiaro per tutto il team', cons: '', would_rehire: '1',
+    title: 'Top', pros: 'Corso pratico e molto chiaro per tutto il laboratorio', cons: '', would_rehire: '1',
   });
   assert.equal(res.status, 302);
   const after = M.getBySlug(db, 'martina-de-luca');
@@ -107,4 +114,22 @@ test('registrazione professionista crea profilo in bozza non visibile', async ()
 test('media bayesiana nel ranking "consigliati"', () => {
   const [first] = M.search(db, { sort: 'consigliati' }).results;
   assert.ok(first.review_count >= 3);
+});
+
+test('il professionista salva tipi di servizio, filiere e listino', async () => {
+  const pro = await agentLoggedAs('nicola.ferri@esempio.it');
+  const res = await pro.agent.post('/area-personale/profilo').type('form').send({
+    _csrf: pro.csrf, headline: 'Consulente apicoltura e filiera del miele', city: 'Macerata', region: 'Marche',
+    bio: 'Seguo apicoltori professionisti e hobbisti in tutte le fasi, dall’apiario alla vendita del miele.',
+    categories: String(db.prepare("SELECT id FROM categories WHERE slug = 'zootecnia'").get().id),
+    service_types: ['consulenza', 'formazione', 'inventato'], sectors: ['apicoltura', 'agriturismo'],
+    price_from: '200', price_unit: 'giornata', published: '1',
+    svc_name: ['Corso base', '', 'Visita in apiario'], svc_price: ['150', '', '200'], svc_unit: ['partecipante', 'pratica', 'giornata'],
+  });
+  assert.equal(res.status, 302);
+  const p = M.getBySlug(db, 'nicola-ferri');
+  assert.deepEqual(p.serviceTypeList, ['consulenza', 'formazione']);
+  assert.deepEqual(p.sectorList.map((x) => x.slug), ['apicoltura', 'agriturismo']);
+  assert.deepEqual(M.servicesFor(db, p.id).map((s) => [s.name, s.price, s.unit]),
+    [['Corso base', 150, 'partecipante'], ['Visita in apiario', 200, 'giornata']]);
 });

@@ -9,6 +9,32 @@ const CRITERIA = [
   { key: 'professionalita', label: 'Professionalità' },
 ];
 
+// Tre macro-segmenti dell'offerta.
+const SERVICE_TYPES = {
+  formazione: { label: 'Formazione', icon: '🎓', hint: 'Corsi obbligatori, patentini, aggiornamento' },
+  consulenza: { label: 'Consulenza', icon: '🌿', hint: 'Agronomia, gestione, mercati, energia' },
+  pratiche: { label: 'Pratiche e bandi', icon: '📋', hint: 'PAC, CSR/PSR, PNRR, ISMEA, autorizzazioni' },
+};
+
+// Filiere produttive.
+const SECTORS = [
+  { slug: 'vitivinicolo', name: 'Vitivinicolo', icon: '🍇' },
+  { slug: 'olivicolo', name: 'Olivicolo', icon: '🫒' },
+  { slug: 'ortofrutticolo', name: 'Ortofrutta', icon: '🍅' },
+  { slug: 'cerealicolo', name: 'Cereali e seminativi', icon: '🌾' },
+  { slug: 'zootecnico', name: 'Zootecnia', icon: '🐄' },
+  { slug: 'lattiero-caseario', name: 'Lattiero-caseario', icon: '🧀' },
+  { slug: 'florovivaistico', name: 'Florovivaismo', icon: '🌷' },
+  { slug: 'apicoltura', name: 'Apicoltura', icon: '🐝' },
+  { slug: 'agriturismo', name: 'Agriturismo', icon: '🏡' },
+];
+const SECTOR_BY_SLUG = Object.fromEntries(SECTORS.map((x) => [x.slug, x]));
+
+const UNITS = {
+  pratica: 'pratica', giornata: 'giornata', ora: 'ora', mese: 'mese', partecipante: 'partecipante',
+  corso: 'corso', ettaro: 'ettaro', preventivo: 'su preventivo',
+};
+
 const REGIONS = [
   'Abruzzo', 'Basilicata', 'Calabria', 'Campania', 'Emilia-Romagna', 'Friuli-Venezia Giulia',
   'Lazio', 'Liguria', 'Lombardia', 'Marche', 'Molise', 'Piemonte', 'Puglia', 'Sardegna',
@@ -60,6 +86,8 @@ function decorate(p) {
   const out = { ...p };
   out.categories = out.category_names ? out.category_names.split('|') : [];
   out.skillList = splitList(out.skills);
+  out.serviceTypeList = splitList(out.service_types).filter((t) => SERVICE_TYPES[t]);
+  out.sectorList = splitList(out.sectors).map((x) => SECTOR_BY_SLUG[x]).filter(Boolean);
   out.languageList = splitList(out.languages);
   out.certificationList = splitList(out.certifications);
   out.rating = out.avg_rating == null ? null : Math.round(out.avg_rating * 10) / 10;
@@ -80,8 +108,6 @@ const SORTS = {
   consigliati: 'score DESC, review_count DESC',
   valutazione: 'COALESCE(avg_rating,0) DESC, review_count DESC',
   recensioni: 'review_count DESC, score DESC',
-  prezzo_asc: 'daily_rate IS NULL, daily_rate ASC',
-  prezzo_desc: 'daily_rate DESC',
   esperienza: 'years_experience DESC',
 };
 
@@ -97,13 +123,20 @@ function search(db, f = {}) {
                          WHERE pc.professional_id = p.id AND c.slug = $category)`);
     params.$category = f.category;
   }
+  if (f.type && SERVICE_TYPES[f.type]) {
+    where.push(`(',' || REPLACE(p.service_types, ' ', '') || ',') LIKE $type`);
+    params.$type = `%,${f.type},%`;
+  }
+  if (f.sector && SECTOR_BY_SLUG[f.sector]) {
+    where.push(`(',' || REPLACE(p.sectors, ' ', '') || ',') LIKE $sector`);
+    params.$sector = `%,${f.sector},%`;
+  }
   if (f.where) {
     where.push('(p.city LIKE $where OR p.region LIKE $where)');
     params.$where = `%${f.where}%`;
   }
   if (f.mode === 'remoto') where.push(`p.mode IN ('remoto','entrambi')`);
   if (f.mode === 'presenza') where.push(`p.mode IN ('presenza','entrambi')`);
-  if (f.maxRate) { where.push('p.daily_rate <= $maxRate'); params.$maxRate = Number(f.maxRate); }
   if (f.minRating) { where.push('s.avg_rating >= $minRating'); params.$minRating = Number(f.minRating); }
   if (f.verified) where.push('p.verified = 1');
   if (f.available) where.push('p.available = 1');
@@ -139,6 +172,17 @@ function reviewsFor(db, professionalId) {
      ORDER BY r.created_at DESC`).all(professionalId);
 }
 
+function servicesFor(db, professionalId) {
+  return db.prepare('SELECT * FROM services WHERE professional_id = ? ORDER BY position, id').all(professionalId);
+}
+
+function countsBy(db, column, keys) {
+  const rows = db.prepare(`SELECT ${column} AS v FROM professionals WHERE published = 1`).all();
+  const out = Object.fromEntries(keys.map((k) => [k, 0]));
+  for (const r of rows) for (const k of splitList(r.v)) if (k in out) out[k]++;
+  return out;
+}
+
 function ratingDistribution(db, professionalId) {
   const rows = db.prepare(`SELECT CAST(ROUND(overall) AS INTEGER) AS star, COUNT(*) AS n
                              FROM reviews WHERE professional_id = ? AND hidden = 0 GROUP BY star`).all(professionalId);
@@ -172,6 +216,6 @@ function computeOverall(r) {
 }
 
 module.exports = {
-  CRITERIA, REGIONS, SORTS, ratingLabel, search, getBySlug, getByUserId, topRated, reviewsFor,
+  CRITERIA, REGIONS, SORTS, SERVICE_TYPES, SECTORS, SECTOR_BY_SLUG, UNITS, servicesFor, countsBy, ratingLabel, search, getBySlug, getByUserId, topRated, reviewsFor,
   ratingDistribution, categoriesWithCounts, slugify, uniqueSlug, computeOverall, splitList, initials,
 };

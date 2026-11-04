@@ -1,62 +1,84 @@
 <%- include('partials/header') %>
-<section class="hero">
-  <div class="wrap">
-    <h1>Trova il formatore o consulente giusto, valutato da chi lo ha già scelto</h1>
-    <p class="lead">Profili verificati, recensioni reali dopo ogni ingaggio, richieste di disponibilità in un clic.</p>
-    <form class="searchbar" action="/cerca" method="get">
-      <label class="sb-field"><span>🔎</span><input name="q" placeholder="Competenza, tema o nome (es. leadership, GDPR, Excel)"></label>
-      <label class="sb-field"><span>📍</span><input name="where" placeholder="Città o regione"></label>
-      <label class="sb-field"><span>🖥️</span>
-        <select name="mode"><option value="">Qualsiasi modalità</option><option value="presenza">In presenza</option><option value="remoto">Da remoto</option></select>
-      </label>
-      <button class="btn primary big">Cerca</button>
-    </form>
-  </div>
-</section>
+<div class="wrap">
+  <section class="hero">
+    <div class="hero-copy">
+      <p class="eyebrow">Per aziende agricole, cantine, cooperative e agriturismi</p>
+      <h1>Il tecnico giusto per la tua azienda, scelto da chi lavora la terra</h1>
+      <p class="lead">Formatori, consulenti e professionisti delle pratiche agricole, con profili verificati e recensioni di altre aziende.</p>
+      <form class="finder" action="/cerca" method="get">
+        <div class="seg" role="radiogroup" aria-label="Tipo di servizio">
+          <label><input type="radio" name="type" value="" checked><span>Tutto</span></label>
+          <% Object.entries(SERVICE_TYPES).forEach(([k, t]) => { %><label><input type="radio" name="type" value="<%= k %>"><span><%= t.label %></span></label><% }) %>
+        </div>
+        <div class="finder-fields">
+          <label class="ff"><span class="ff-label">Di cosa hai bisogno?</span><input name="q" placeholder="Es. domanda PAC, patentino, bando CSR, agriturismo"></label>
+          <label class="ff"><span class="ff-label">Filiera</span>
+            <select name="sector"><option value="">Tutte le filiere</option><% SECTORS.forEach(x => { %><option value="<%= x.slug %>"><%= x.icon %> <%= x.name %></option><% }) %></select></label>
+          <label class="ff"><span class="ff-label">Dove</span><input name="where" placeholder="Provincia o regione"></label>
+          <button class="btn primary big">Cerca</button>
+        </div>
+      </form>
+    </div>
+    <aside class="hero-needs">
+      <h2>Richieste frequenti</h2>
+      <a href="/cerca?category=pratiche-pac">📋 Presentare la domanda PAC <span>›</span></a>
+      <a href="/cerca?category=finanza-agevolata">💶 Trovare un bando per investire <span>›</span></a>
+      <a href="/cerca?q=patentino">🎓 Rinnovare il patentino fitosanitari <span>›</span></a>
+      <a href="/cerca?category=giovani-agricoltori">🌱 Aprire un’azienda da giovane <span>›</span></a>
+      <a href="/cerca?category=energia-sostenibilita">☀️ Pannelli solari sui capannoni <span>›</span></a>
+      <a href="/cerca?category=multifunzionalita">🏡 Avviare un agriturismo <span>›</span></a>
+    </aside>
+  </section>
 
-<section class="wrap section">
-  <div class="kpis">
-    <div><strong><%= stats.pros %></strong><span>professionisti attivi</span></div>
-    <div><strong><%= stats.reviews %></strong><span>recensioni verificate</span></div>
-    <div><strong><%= stats.avg || '–' %> ★</strong><span>valutazione media</span></div>
-  </div>
-</section>
-
-<section class="wrap section">
-  <h2>Esplora per categoria</h2>
-  <div class="cat-grid">
-    <% categories.forEach(c => { %>
-      <a class="cat" href="/cerca?category=<%= c.slug %>">
-        <span class="cat-icon"><%= c.icon %></span>
-        <strong><%= c.name %></strong>
-        <small><%= c.count %> professionist<%= c.count === 1 ? 'a' : 'i' %></small>
+  <section class="section trio">
+    <% Object.entries(SERVICE_TYPES).forEach(([k, t]) => { %>
+      <a class="trio-item t-<%= k %>" href="/cerca?type=<%= k %>">
+        <span class="trio-icon"><%= t.icon %></span>
+        <strong><%= t.label %></strong>
+        <span><%= t.hint %></span>
+        <em><%= typeCounts[k] %> professionisti ›</em>
       </a>
     <% }) %>
-  </div>
-</section>
+  </section>
 
-<section class="wrap section">
-  <h2>I più apprezzati</h2>
-  <p class="muted">Classifica basata su valutazione media e numero di recensioni verificate.</p>
-  <div class="tile-grid">
-    <% top.forEach(p => { %>
-      <a class="tile card" href="/professionisti/<%= p.slug %>">
-        <div class="avatar lg" style="background:<%= p.avatar_color %>"><%= p.initials %></div>
-        <strong><%= p.name %></strong>
-        <span class="muted small"><%= p.headline %></span>
-        <span class="small">📍 <%= p.city %></span>
-        <div class="tile-score"><span class="score-box sm"><%= p.rating.toFixed(1) %></span> <strong><%= p.ratingLabel %></strong> <span class="muted small">· <%= p.review_count %> recensioni</span></div>
-        <span class="small">da <strong><%= fmtEuro(p.daily_rate) %></strong>/giorno</span>
-      </a>
-    <% }) %>
-  </div>
-</section>
+  <section class="section">
+    <div class="section-head"><h2>Cerca per filiera</h2></div>
+    <div class="sector-row">
+      <% SECTORS.forEach(x => { %>
+        <a class="sector" href="/cerca?sector=<%= x.slug %>"><span><%= x.icon %></span><strong><%= x.name %></strong><small><%= sectorCounts[x.slug] %></small></a>
+      <% }) %>
+    </div>
+  </section>
 
-<section class="wrap section cta">
-  <div>
-    <h2>Sei un formatore o un consulente?</h2>
-    <p>Crea gratis il tuo profilo, fatti trovare dalle aziende e costruisci la tua reputazione con recensioni verificate.</p>
-  </div>
-  <a class="btn primary big" href="/registrati?ruolo=professionista">Iscriviti come professionista</a>
-</section>
+  <section class="section">
+    <div class="section-head"><h2>Tutti i servizi</h2></div>
+    <div class="cat-list">
+      <% categories.forEach(c => { %>
+        <a class="cat" href="/cerca?category=<%= c.slug %>">
+          <span class="cat-icon"><%= c.icon %></span>
+          <span><strong><%= c.name %></strong><small><%= c.description %></small></span>
+          <span class="cat-count"><%= c.count %></span>
+        </a>
+      <% }) %>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="section-head">
+      <h2>I più apprezzati dalle aziende</h2>
+      <p class="muted">Media delle stelle ponderata sul numero di recensioni · <%= stats.reviews %> recensioni verificate, media <%= stats.avg %> ★</p>
+    </div>
+    <div class="card-grid">
+      <% top.forEach(p => { %><%- include('partials/card', { p, favs, back: '/' }) %><% }) %>
+    </div>
+  </section>
+
+  <section class="section cta">
+    <div>
+      <h2>Sei agronomo, formatore, tecnico o consulente?</h2>
+      <p>Crea gratis il tuo profilo con listino e filiere seguite: le aziende agricole della tua zona ti trovano e ti valutano.</p>
+    </div>
+    <a class="btn wheat big" href="/registrati?ruolo=professionista">Crea il tuo profilo</a>
+  </section>
+</div>
 <%- include('partials/footer') %>

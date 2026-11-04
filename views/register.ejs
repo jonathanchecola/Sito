@@ -7,13 +7,13 @@
       <input type="hidden" name="_csrf" value="<%= csrf %>">
       <div class="role-switch">
         <label class="role-opt"><input type="radio" name="role" value="client" <%= role === 'client' ? 'checked' : '' %>>
-          <span><strong>Cerco professionisti</strong><small>Azienda, ente o privato che vuole ingaggiare formatori e consulenti</small></span></label>
+          <span><strong>Ho un’azienda agricola</strong><small>Azienda, cantina, cooperativa o agriturismo che cerca formatori, consulenti e tecnici</small></span></label>
         <label class="role-opt"><input type="radio" name="role" value="professional" <%= role === 'professional' ? 'checked' : '' %>>
-          <span><strong>Sono un professionista</strong><small>Formatore, consulente, coach: voglio essere trovato</small></span></label>
+          <span><strong>Sono un professionista</strong><small>Agronomo, formatore, consulente o tecnico: voglio essere trovato</small></span></label>
       </div>
       <label>Nome e cognome<input name="name" value="<%= v.name || '' %>" required maxlength="100"></label>
       <label>Email<input type="email" name="email" value="<%= v.email || '' %>" required autocomplete="email"></label>
-      <label>Azienda / Ente <span class="muted">(facoltativo)</span><input name="company" value="<%= v.company || '' %>" maxlength="120"></label>
+      <label>Nome dell’azienda <span class="muted">(facoltativo)</span><input name="company" value="<%= v.company || '' %>" maxlength="120"></label>
       <label>Password <span class="muted">(min. 8 caratteri)</span><input type="password" name="password" required minlength="8" autocomplete="new-password"></label>
       <button class="btn primary full">Registrati</button>
     </form>

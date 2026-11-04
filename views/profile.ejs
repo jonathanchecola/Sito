@@ -1,31 +1,48 @@
 <%- include('partials/header') %>
 <div class="wrap crumbs"><a href="/">Home</a> › <a href="/cerca">Professionisti</a> › <% if (p.categories[0]) { %><%= p.categories[0] %> › <% } %><%= p.name %></div>
 <% if (isOwner && !p.published) { %><div class="wrap"><div class="flash warn">Il tuo profilo non è ancora pubblico. <a href="/area-personale/profilo">Completalo e pubblicalo</a>.</div></div><% } %>
+<div class="wrap">
+  <section class="profile-hero">
+    <div class="avatar xxl" style="background:<%= p.avatar_color %>"><%= p.initials %></div>
+    <div class="ph-body">
+      <h1><%= p.name %></h1>
+      <p class="headline big"><%= p.headline %></p>
+      <p class="meta">📍 <%= p.city %><%= p.region ? ', ' + p.region : '' %> · <%= MODES[p.mode] %> · <%= p.years_experience %> anni di esperienza
+        <% if (p.verified) { %> · <span class="verified">✔ Verificato</span><% } %></p>
+      <%- include('partials/types', { p }) %>
+    </div>
+    <div class="ph-side">
+      <%- include('partials/badge', { p }) %>
+      <% if (p.rating != null) { %><%- include('partials/stars', { value: p.rating }) %><% } %>
+      <%- include('partials/favbtn', { p, isFav, back: '/professionisti/' + p.slug }) %>
+    </div>
+  </section>
+</div>
 <div class="wrap profile-layout">
   <div class="profile-main">
-    <section class="card profile-head">
-      <div class="avatar xxl" style="background:<%= p.avatar_color %>"><%= p.initials %></div>
-      <div class="ph-body">
-        <h1><%= p.name %> <% if (p.verified) { %><span class="verified">✔ Verificato</span><% } %></h1>
-        <p class="headline big"><%= p.headline %></p>
-        <% if (p.rating != null) { %><div><%- include('partials/stars', { value: p.rating }) %> <strong><%= p.rating.toFixed(1) %></strong> <span class="muted">(<%= p.review_count %> recensioni)</span></div><% } %>
-        <p class="meta">📍 <%= p.city %><%= p.region ? ', ' + p.region : '' %> · <%= MODES[p.mode] %> · <%= p.years_experience %> anni di esperienza</p>
-        <div class="tags"><% p.categories.forEach(c => { %><span class="tag cat-tag"><%= c %></span><% }) %></div>
-      </div>
-      <div class="ph-side">
-        <%- include('partials/favbtn', { p, isFav, back: '/professionisti/' + p.slug }) %>
-        <a href="#richiesta" class="btn primary">Richiedi disponibilità</a>
-      </div>
-    </section>
-
     <section class="card">
       <h2>Presentazione</h2>
       <p class="prose"><%= p.bio || 'Il professionista non ha ancora inserito una presentazione.' %></p>
+      <div class="tags"><% p.categories.forEach(c => { %><span class="tag cat-tag"><%= c %></span><% }) %></div>
+    </section>
+
+    <section class="card">
+      <h2>Servizi e listino</h2>
+      <% if (!services.length) { %><p class="muted">Listino non ancora inserito: chiedi un preventivo.</p><% } else { %>
+      <ul class="pricelist">
+        <% services.forEach(s => { %><li><span><%= s.name %></span><span class="dots" aria-hidden="true"></span><strong><%= fmtPrice(s.price, s.unit) %></strong></li><% }) %>
+      </ul>
+      <p class="small muted">Prezzi indicativi, IVA esclusa. Il preventivo definitivo dipende dalla tua azienda.</p>
+      <% } %>
+    </section>
+
+    <section class="card">
+      <h2>Esperienza e competenze</h2>
       <div class="facts">
+        <div><h4>Filiere seguite</h4><% if (p.sectorList.length) { %><div class="tags"><% p.sectorList.forEach(x => { %><span class="tag"><%= x.icon %> <%= x.name %></span><% }) %></div><% } else { %><p>—</p><% } %></div>
         <div><h4>Competenze</h4><div class="tags"><% p.skillList.forEach(s => { %><span class="tag"><%= s %></span><% }) %></div></div>
+        <div><h4>Titoli e abilitazioni</h4><% if (p.certificationList.length) { %><ul><% p.certificationList.forEach(c => { %><li><%= c %></li><% }) %></ul><% } else { %><p>—</p><% } %></div>
         <div><h4>Lingue</h4><p><%= p.languageList.join(', ') || '—' %></p></div>
-        <div><h4>Certificazioni</h4><% if (p.certificationList.length) { %><ul><% p.certificationList.forEach(c => { %><li><%= c %></li><% }) %></ul><% } else { %><p>—</p><% } %></div>
-        <div><h4>Tariffe indicative</h4><p>Giornata: <strong><%= fmtEuro(p.daily_rate) %></strong><br>Ora: <strong><%= fmtEuro(p.hourly_rate) %></strong><br><small class="muted">IVA esclusa</small></p></div>
       </div>
       <% if (p.website || p.linkedin) { %><p class="links"><% if (p.website) { %><a href="<%= p.website %>" rel="nofollow noopener" target="_blank">Sito web ↗</a><% } %> <% if (p.linkedin) { %><a href="<%= p.linkedin %>" rel="nofollow noopener" target="_blank">LinkedIn ↗</a><% } %></p><% } %>
     </section>
@@ -39,7 +56,7 @@
         <div class="rs-score">
           <div class="score-box xl"><%= p.rating.toFixed(1) %></div>
           <div><strong><%= p.ratingLabel %></strong><br><span class="muted"><%= p.review_count %> recensioni verificate</span>
-          <% if (p.rehire_pct != null) { %><br><span class="small">👍 <%= Math.round(p.rehire_pct) %>% lo ingaggerebbe di nuovo</span><% } %></div>
+          <% if (p.rehire_pct != null) { %><br><span class="small">👍 <%= Math.round(p.rehire_pct) %>% lo richiamerebbe</span><% } %></div>
         </div>
         <div class="rs-criteria">
           <% CRITERIA.forEach(c => { const v = p['avg_' + c.key] || 0; %>
@@ -58,7 +75,7 @@
           <article class="review">
             <div class="rv-author">
               <div class="avatar sm grey"><%= r.client_name.split(' ').map(w => w[0]).slice(0,2).join('') %></div>
-              <div><strong><%= r.client_name.split(' ')[0] %></strong><br><span class="muted small"><%= r.client_company || 'Committente privato' %></span></div>
+              <div><strong><%= r.client_name.split(' ')[0] %></strong><br><span class="muted small"><%= r.client_company || 'Azienda agricola' %></span></div>
             </div>
             <div class="rv-body">
               <div class="rv-top">
@@ -88,12 +105,11 @@
 
   <aside class="profile-side">
     <section class="card sticky" id="richiesta">
-      <div class="side-price"><small>Tariffa giornaliera da</small><strong><%= fmtEuro(p.daily_rate) %></strong><small>+ IVA</small></div>
-      <% if (p.rating != null) { %><%- include('partials/badge', { p }) %><% } %>
+      <div class="side-price"><small>A partire da</small><strong><%= fmtPrice(p.price_from, p.price_unit) %></strong><small>IVA esclusa</small></div>
       <p class="<%= p.available ? 'ok' : 'unavailable' %> small"><%= p.available ? '● Disponibile per nuovi incarichi' : '● Disponibilità limitata' %></p>
-      <h3>Richiedi disponibilità</h3>
+      <h3>Chiedi un preventivo</h3>
       <% if (!user) { %>
-        <p class="small">Accedi con un account aziendale per contattare <%= p.name.split(' ')[0] %>.</p>
+        <p class="small">Accedi con l’account della tua azienda per contattare <%= p.name.split(' ')[0] %>.</p>
         <a class="btn primary full" href="/accedi?next=/professionisti/<%= p.slug %>%23richiesta">Accedi per richiedere</a>
         <a class="btn-link" href="/registrati">Non hai un account? Registrati</a>
       <% } else if (user.role !== 'client') { %>
@@ -101,16 +117,16 @@
       <% } else { %>
         <form method="post" action="/professionisti/<%= p.slug %>/richiesta" class="stack">
           <input type="hidden" name="_csrf" value="<%= csrf %>">
-          <label>Oggetto*<input name="title" required maxlength="140" placeholder="Es. Corso sicurezza per 20 dipendenti"></label>
+          <label>Di cosa hai bisogno?*<input name="title" required maxlength="140" placeholder="Es. Domanda PAC 2027, corso patentino per 4 dipendenti"></label>
           <div class="row2">
             <label>Data inizio<input type="date" name="start_date"></label>
-            <label>Giornate<input type="number" name="days" min="1" max="365"></label>
+            <label>Giornate<input type="number" name="days" min="1" max="365" placeholder="se serve"></label>
           </div>
-          <label>Modalità<select name="mode"><option value="entrambi">Indifferente</option><option value="presenza">In presenza</option><option value="remoto">Da remoto</option></select></label>
-          <label>Luogo<input name="location" placeholder="Città o sede"></label>
+          <label>Modalità<select name="mode"><option value="entrambi">Indifferente</option><option value="presenza">In azienda</option><option value="remoto">Da remoto</option></select></label>
+          <label>Dove si trova l’azienda<input name="location" placeholder="Comune o provincia"></label>
           <label>Budget indicativo (€)<input type="number" name="budget" min="0"></label>
-          <label>Dettagli<textarea name="description" rows="4" placeholder="Obiettivi, numero di partecipanti, livello…"></textarea></label>
-          <button class="btn primary full">Invia richiesta</button>
+          <label>Dettagli<textarea name="description" rows="4" placeholder="Ettari, colture o allevamenti, scadenze, numero di partecipanti…"></textarea></label>
+          <button class="btn primary full">Invia la richiesta</button>
           <p class="small muted">Nessun costo: il professionista ti risponderà nella tua area personale.</p>
         </form>
       <% } %>

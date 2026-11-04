@@ -6,12 +6,18 @@
   <form method="post" action="/area-personale/profilo" class="card stack">
     <input type="hidden" name="_csrf" value="<%= csrf %>">
     <h2>Chi sei</h2>
-    <label>Titolo professionale*<input name="headline" value="<%= p.headline %>" maxlength="140" placeholder="Es. Formatore sicurezza sul lavoro e RSPP"></label>
-    <label>Presentazione*<textarea name="bio" rows="6" maxlength="4000" placeholder="Esperienza, metodo di lavoro, settori e clienti tipici"><%= p.bio %></textarea></label>
-    <fieldset><legend>Categorie*</legend><div class="check-grid">
+    <label>Titolo professionale*<input name="headline" value="<%= p.headline %>" maxlength="140" placeholder="Es. Agronomo – consulenza su difesa integrata e PSR"></label>
+    <label>Presentazione*<textarea name="bio" rows="6" maxlength="4000" placeholder="Esperienza, aziende che segui, zone in cui lavori, come lavori"><%= p.bio %></textarea></label>
+    <fieldset><legend>Cosa offri*</legend><div class="check-grid">
+      <% const st = new Set((p.service_types || '').split(',')); Object.entries(SERVICE_TYPES).forEach(([k, t]) => { %><label class="opt"><input type="checkbox" name="service_types" value="<%= k %>" <%= st.has(k) ? 'checked' : '' %>> <%= t.icon %> <strong><%= t.label %></strong> <span class="muted small"><%= t.hint %></span></label><% }) %>
+    </div></fieldset>
+    <fieldset><legend>Filiere che segui</legend><div class="check-grid">
+      <% const sc = new Set((p.sectors || '').split(',')); SECTORS.forEach(x => { %><label class="opt"><input type="checkbox" name="sectors" value="<%= x.slug %>" <%= sc.has(x.slug) ? 'checked' : '' %>> <%= x.icon %> <%= x.name %></label><% }) %>
+    </div></fieldset>
+    <fieldset><legend>Servizi*</legend><div class="check-grid">
       <% categories.forEach(c => { %><label class="opt"><input type="checkbox" name="categories" value="<%= c.id %>" <%= selected.has(c.id) ? 'checked' : '' %>> <%= c.icon %> <%= c.name %></label><% }) %>
     </div></fieldset>
-    <label>Competenze <span class="muted">(separate da virgola)</span><input name="skills" value="<%= p.skills %>" placeholder="Leadership, Public speaking, Excel"></label>
+    <label>Competenze <span class="muted">(separate da virgola)</span><input name="skills" value="<%= p.skills %>" placeholder="Domanda PAC, Difesa integrata, HACCP"></label>
 
     <h2>Dove e come lavori</h2>
     <div class="row3">
@@ -20,14 +26,26 @@
       <label>Modalità<select name="mode"><% Object.entries(MODES).forEach(([k, l]) => { %><option value="<%= k %>" <%= p.mode === k ? 'selected' : '' %>><%= l %></option><% }) %></select></label>
     </div>
     <div class="row3">
-      <label>Tariffa giornaliera (€)<input type="number" name="daily_rate" min="0" value="<%= p.daily_rate ?? '' %>"></label>
-      <label>Tariffa oraria (€)<input type="number" name="hourly_rate" min="0" value="<%= p.hourly_rate ?? '' %>"></label>
+      <label>Prezzo a partire da (€)<input type="number" name="price_from" min="0" value="<%= p.price_from ?? '' %>"></label>
+      <label>Unità<select name="price_unit"><% Object.entries(UNITS).forEach(([k, l]) => { %><option value="<%= k %>" <%= p.price_unit === k ? 'selected' : '' %>><%= l %></option><% }) %></select></label>
       <label>Anni di esperienza<input type="number" name="years_experience" min="0" max="60" value="<%= p.years_experience %>"></label>
+    </div>
+
+    <h2>Listino servizi</h2>
+    <p class="small muted">Fino a 6 voci, ad esempio "Domanda unica PAC – 150 € a pratica". Lascia vuote le righe che non ti servono.</p>
+    <div class="svc-rows">
+      <% for (let i = 0; i < 6; i++) { const s = services[i] || {}; %>
+        <div class="svc-row">
+          <input name="svc_name" value="<%= s.name || '' %>" placeholder="Nome del servizio" aria-label="Servizio <%= i + 1 %>">
+          <input type="number" name="svc_price" min="0" value="<%= s.price ?? '' %>" placeholder="€" aria-label="Prezzo servizio <%= i + 1 %>">
+          <select name="svc_unit" aria-label="Unità servizio <%= i + 1 %>"><% Object.entries(UNITS).forEach(([k, l]) => { %><option value="<%= k %>" <%= (s.unit || 'pratica') === k ? 'selected' : '' %>><%= l %></option><% }) %></select>
+        </div>
+      <% } %>
     </div>
 
     <h2>Credenziali</h2>
     <label>Lingue <span class="muted">(separate da virgola)</span><input name="languages" value="<%= p.languages %>"></label>
-    <label>Certificazioni e titoli <span class="muted">(separate da virgola)</span><input name="certifications" value="<%= p.certifications %>"></label>
+    <label>Titoli, iscrizioni ad albi e abilitazioni <span class="muted">(separati da virgola)</span><input name="certifications" value="<%= p.certifications %>"></label>
     <div class="row3">
       <label>Sito web<input type="url" name="website" value="<%= p.website %>" placeholder="https://"></label>
       <label>LinkedIn<input type="url" name="linkedin" value="<%= p.linkedin %>" placeholder="https://linkedin.com/in/…"></label>

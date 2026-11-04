@@ -11,7 +11,7 @@ const STATUS = {
   in_attesa: 'In attesa', accettata: 'Accettata', rifiutata: 'Rifiutata',
   completata: 'Completata', annullata: 'Annullata',
 };
-const COLORS = ['#1a5fb4', '#c64600', '#26a269', '#813d9c', '#a51d2d', '#0b7285', '#986a44', '#5e5c64'];
+const COLORS = ['#2f6b3f', '#8a5a2b', '#3d7f8c', '#6b4f8a', '#a3472f', '#4f6b2a', '#7a6a2b', '#2b5d6b'];
 
 function createApp(db, opts = {}) {
   const app = express();
@@ -44,7 +44,8 @@ function createApp(db, opts = {}) {
     Object.assign(res.locals, {
       user: req.user, csrf: req.session.csrf, path: req.path, query: req.query,
       flash: req.session.flash || null, MODES, STATUS, CRITERIA: M.CRITERIA, REGIONS: M.REGIONS,
-      stars, fmtEuro, fmtDate,
+      SERVICE_TYPES: M.SERVICE_TYPES, SECTORS: M.SECTORS, UNITS: M.UNITS,
+      stars, fmtEuro, fmtDate, fmtPrice,
     });
     delete req.session.flash;
     if (req.method === 'POST' && req.body._csrf !== req.session.csrf) {
@@ -72,8 +73,10 @@ function createApp(db, opts = {}) {
   // ---------- Pagine pubbliche ----------
   app.get('/', (req, res) => {
     res.render('home', {
-      title: 'Trova formatori e consulenti valutati',
+      title: 'Formazione, consulenza e pratiche per le aziende agricole',
       categories: M.categoriesWithCounts(db),
+      typeCounts: M.countsBy(db, 'service_types', Object.keys(M.SERVICE_TYPES)),
+      sectorCounts: M.countsBy(db, 'sectors', M.SECTORS.map((x) => x.slug)),
       top: M.topRated(db, 6),
       favs: favoritesOf(req.user),
       stats: db.prepare(`SELECT (SELECT COUNT(*) FROM professionals WHERE published=1) AS pros,
@@ -85,7 +88,8 @@ function createApp(db, opts = {}) {
   app.get('/cerca', (req, res) => {
     const f = {
       q: str(req.query.q, 100), where: str(req.query.where, 60), category: str(req.query.category, 60),
-      mode: str(req.query.mode, 20), maxRate: int(req.query.maxRate), minRating: num(req.query.minRating),
+      type: str(req.query.type, 20), sector: str(req.query.sector, 30),
+      mode: str(req.query.mode, 20), minRating: num(req.query.minRating),
       verified: req.query.verified === '1', available: req.query.available === '1',
       sort: str(req.query.sort, 20), page: req.query.page,
     };
@@ -104,7 +108,7 @@ function createApp(db, opts = {}) {
     }
     res.render('profile', {
       title: `${p.name} – ${p.headline}`, p, isOwner,
-      reviews: M.reviewsFor(db, p.id), dist: M.ratingDistribution(db, p.id),
+      reviews: M.reviewsFor(db, p.id), dist: M.ratingDistribution(db, p.id), services: M.servicesFor(db, p.id),
       isFav: favoritesOf(req.user).has(p.id),
     });
   });
@@ -188,7 +192,7 @@ function createApp(db, opts = {}) {
     const p = M.getByUserId(db, req.user.id);
     if (!p) return res.redirect('/area-personale');
     const selected = new Set(db.prepare('SELECT category_id FROM professional_categories WHERE professional_id = ?').all(p.id).map((r) => r.category_id));
-    res.render('profile_edit', { title: 'Modifica profilo', p, categories: M.categoriesWithCounts(db), selected, errors: [] });
+    res.render('profile_edit', { title: 'Modifica profilo', p, categories: M.categoriesWithCounts(db), selected, services: M.servicesFor(db, p.id), errors: [] });
   });
 
   app.post('/area-personale/profilo', requireRole('professional'), (req, res) => {
@@ -198,15 +202,25 @@ function createApp(db, opts = {}) {
       headline: str(b.headline, 140), bio: str(b.bio, 4000), city: str(b.city, 80),
       region: M.REGIONS.includes(b.region) ? b.region : '',
       mode: MODES[b.mode] ? b.mode : 'entrambi',
-      daily_rate: int(b.daily_rate), hourly_rate: int(b.hourly_rate),
+      price_from: int(b.price_from), price_unit: M.UNITS[b.price_unit] ? b.price_unit : 'giornata',
+      service_types: [].concat(b.service_types || []).filter((t) => M.SERVICE_TYPES[t]).join(','),
+      sectors: [].concat(b.sectors || []).filter((x) => M.SECTOR_BY_SLUG[x]).join(','),
       years_experience: int(b.years_experience) || 0,
       skills: cleanList(b.skills), languages: cleanList(b.languages) || 'Italiano',
       certifications: cleanList(b.certifications), website: url(b.website), linkedin: url(b.linkedin),
       vat_number: str(b.vat_number, 20), available: b.available ? 1 : 0, published: b.published ? 1 : 0,
     };
     const cats = [].concat(b.categories || []).map(Number).filter(Boolean);
+    // Listino: righe con nome, prezzo e unità (le righe vuote vengono ignorate).
+    const names = [].concat(b.svc_name || []);
+    const prices = [].concat(b.svc_price || []);
+    const units = [].concat(b.svc_unit || []);
+    const services = names.map((n, i) => ({
+      name: str(n, 120), price: int(prices[i]), unit: M.UNITS[units[i]] ? units[i] : 'pratica',
+    })).filter((x) => x.name).slice(0, 10);
     const errors = [];
     if (data.published) {
+      if (!data.service_types) errors.push('Indica se offri formazione, consulenza e/o pratiche.');
       if (data.headline.length < 5) errors.push('Il titolo professionale è obbligatorio per pubblicare il profilo.');
       if (data.bio.length < 40) errors.push('Scrivi una presentazione di almeno 40 caratteri.');
       if (!cats.length) errors.push('Seleziona almeno una categoria.');
@@ -214,13 +228,14 @@ function createApp(db, opts = {}) {
     }
     if (errors.length) {
       return res.status(400).render('profile_edit', {
-        title: 'Modifica profilo', p: { ...p, ...data, skills: data.skills }, categories: M.categoriesWithCounts(db), selected: new Set(cats), errors,
+        title: 'Modifica profilo', p: { ...p, ...data }, categories: M.categoriesWithCounts(db), selected: new Set(cats), services, errors,
       });
     }
     db.exec('BEGIN');
     try {
       db.prepare(`UPDATE professionals SET headline=$headline, bio=$bio, city=$city, region=$region, mode=$mode,
-                    daily_rate=$daily_rate, hourly_rate=$hourly_rate, years_experience=$years_experience,
+                    price_from=$price_from, price_unit=$price_unit, years_experience=$years_experience,
+                    service_types=$service_types, sectors=$sectors,
                     skills=$skills, languages=$languages, certifications=$certifications, website=$website,
                     linkedin=$linkedin, vat_number=$vat_number, available=$available, published=$published,
                     updated_at=datetime('now') WHERE id=$id`)
@@ -228,6 +243,9 @@ function createApp(db, opts = {}) {
       db.prepare('DELETE FROM professional_categories WHERE professional_id = ?').run(p.id);
       const ins = db.prepare('INSERT OR IGNORE INTO professional_categories (professional_id, category_id) SELECT ?, id FROM categories WHERE id = ?');
       for (const c of cats) ins.run(p.id, c);
+      db.prepare('DELETE FROM services WHERE professional_id = ?').run(p.id);
+      const insS = db.prepare('INSERT INTO services (professional_id, position, name, price, unit) VALUES (?, ?, ?, ?, ?)');
+      services.forEach((x, i) => insS.run(p.id, i, x.name, x.price, x.unit));
       db.exec('COMMIT');
     } catch (e) { db.exec('ROLLBACK'); throw e; }
     flash(req, 'success', data.published ? 'Profilo salvato e pubblicato.' : 'Profilo salvato (non ancora pubblico).');
@@ -384,6 +402,11 @@ function stars(value) {
   return { full, half, empty: 5 - full - half };
 }
 function fmtEuro(n) { return n == null ? '—' : `€ ${Number(n).toLocaleString('it-IT')}`; }
+function fmtPrice(price, unit) {
+  if (unit === 'preventivo' || price == null) return 'Su preventivo';
+  if (price === 0) return 'Gratuito';
+  return `${fmtEuro(price)} / ${M.UNITS[unit] || unit}`;
+}
 function fmtDate(s) {
   if (!s) return '—';
   const d = new Date(s.length === 10 ? `${s}T00:00:00` : `${s.replace(' ', 'T')}Z`);

@@ -1,76 +1,59 @@
 <%- include('partials/header') %>
-<section class="hero slim">
-  <div class="wrap">
-    <form class="searchbar" action="/cerca" method="get">
-      <label class="sb-field"><span>🔎</span><input name="q" value="<%= f.q %>" placeholder="Competenza, tema o nome"></label>
-      <label class="sb-field"><span>📍</span><input name="where" value="<%= f.where %>" placeholder="Città o regione"></label>
-      <% if (f.category) { %><input type="hidden" name="category" value="<%= f.category %>"><% } %>
-      <button class="btn primary big">Cerca</button>
-    </form>
+<% const qp = (over) => { const o = Object.fromEntries(Object.entries(query).filter(([,v]) => typeof v === 'string' && v)); delete o.page; Object.assign(o, over); for (const k in o) if (o[k] === '' || o[k] == null) delete o[k]; return '/cerca?' + new URLSearchParams(o).toString(); }; %>
+<div class="wrap section">
+  <div class="search-head">
+    <h1><%= f.type ? SERVICE_TYPES[f.type].label : 'Professionisti per l’agricoltura' %></h1>
+    <p class="muted"><%= total %> professionist<%= total === 1 ? 'a' : 'i' %><%= f.where ? ' · ' + f.where : '' %></p>
   </div>
-</section>
-<div class="wrap layout-search">
-  <aside class="filters card">
-    <form method="get" action="/cerca" id="filters">
-      <input type="hidden" name="q" value="<%= f.q %>"><input type="hidden" name="where" value="<%= f.where %>">
-      <input type="hidden" name="sort" value="<%= f.sort %>">
-      <h3>Filtra per:</h3>
-      <fieldset><legend>Categoria</legend>
-        <label class="opt"><input type="radio" name="category" value="" <%= !f.category ? 'checked' : '' %>> Tutte</label>
-        <% categories.forEach(c => { %>
-          <label class="opt"><input type="radio" name="category" value="<%= c.slug %>" <%= f.category === c.slug ? 'checked' : '' %>> <%= c.name %> <span class="muted">(<%= c.count %>)</span></label>
-        <% }) %>
-      </fieldset>
-      <fieldset><legend>Valutazione</legend>
-        <% [['', 'Qualsiasi'], ['4.5', 'Eccellente: 4,5+'], ['4', 'Ottimo: 4+'], ['3.5', 'Buono: 3,5+']].forEach(([v, l]) => { %>
-          <label class="opt"><input type="radio" name="minRating" value="<%= v %>" <%= String(f.minRating || '') === v ? 'checked' : '' %>> <%= l %></label>
-        <% }) %>
-      </fieldset>
-      <fieldset><legend>Modalità</legend>
-        <% [['', 'Qualsiasi'], ['presenza', 'In presenza'], ['remoto', 'Da remoto']].forEach(([v, l]) => { %>
-          <label class="opt"><input type="radio" name="mode" value="<%= v %>" <%= (f.mode || '') === v ? 'checked' : '' %>> <%= l %></label>
-        <% }) %>
-      </fieldset>
-      <fieldset><legend>Tariffa giornaliera max</legend>
-        <input type="range" name="maxRate" min="300" max="1000" step="50" value="<%= f.maxRate || 1000 %>" oninput="this.nextElementSibling.textContent='€ '+this.value">
-        <output>€ <%= f.maxRate || 1000 %></output>
-      </fieldset>
-      <fieldset><legend>Altro</legend>
-        <label class="opt"><input type="checkbox" name="verified" value="1" <%= f.verified ? 'checked' : '' %>> Solo profili verificati</label>
+
+  <nav class="tabs" aria-label="Tipo di servizio">
+    <a class="<%= !f.type ? 'on' : '' %>" href="<%= qp({ type: '' }) %>">Tutti</a>
+    <% Object.entries(SERVICE_TYPES).forEach(([k, t]) => { %><a class="<%= f.type === k ? 'on' : '' %>" href="<%= qp({ type: k }) %>"><%= t.icon %> <%= t.label %></a><% }) %>
+  </nav>
+
+  <form method="get" action="/cerca" class="filterbar">
+    <% if (f.type) { %><input type="hidden" name="type" value="<%= f.type %>"><% } %>
+    <label class="fb-q">Cerca<input name="q" value="<%= f.q %>" placeholder="Servizio, tema o nome"></label>
+    <label>Servizio<select name="category"><option value="">Tutti i servizi</option><% categories.forEach(c => { %><option value="<%= c.slug %>" <%= f.category === c.slug ? 'selected' : '' %>><%= c.name %></option><% }) %></select></label>
+    <label>Filiera<select name="sector"><option value="">Tutte</option><% SECTORS.forEach(x => { %><option value="<%= x.slug %>" <%= f.sector === x.slug ? 'selected' : '' %>><%= x.icon %> <%= x.name %></option><% }) %></select></label>
+    <label>Dove<input name="where" value="<%= f.where %>" placeholder="Provincia o regione"></label>
+    <details class="more" <%= (f.mode || f.minRating || f.verified || f.available) ? 'open' : '' %>>
+      <summary>Altri filtri</summary>
+      <div class="more-body">
+        <label>Modalità<select name="mode"><option value="">Qualsiasi</option><option value="presenza" <%= f.mode === 'presenza' ? 'selected' : '' %>>In azienda / in presenza</option><option value="remoto" <%= f.mode === 'remoto' ? 'selected' : '' %>>Da remoto</option></select></label>
+        <label>Valutazione<select name="minRating"><option value="">Qualsiasi</option><% [['4.5','4,5 ★ e oltre'],['4','4 ★ e oltre'],['3.5','3,5 ★ e oltre']].forEach(([v,l]) => { %><option value="<%= v %>" <%= String(f.minRating || '') === v ? 'selected' : '' %>><%= l %></option><% }) %></select></label>
+        <label class="opt"><input type="checkbox" name="verified" value="1" <%= f.verified ? 'checked' : '' %>> Solo verificati</label>
         <label class="opt"><input type="checkbox" name="available" value="1" <%= f.available ? 'checked' : '' %>> Disponibili ora</label>
-      </fieldset>
-      <button class="btn primary full">Applica filtri</button>
-      <a class="btn-link" href="/cerca">Azzera filtri</a>
-    </form>
-  </aside>
-  <section class="results">
-    <div class="results-head">
-      <h2><%= f.where || 'Italia' %>: <%= total %> professionist<%= total === 1 ? 'a trovato' : 'i trovati' %></h2>
-      <form method="get" action="/cerca" class="sort">
-        <% for (const k of ['q','where','category','mode','maxRate','minRating']) { if (f[k]) { %><input type="hidden" name="<%= k %>" value="<%= f[k] %>"><% } } %>
-        <% if (f.verified) { %><input type="hidden" name="verified" value="1"><% } %><% if (f.available) { %><input type="hidden" name="available" value="1"><% } %>
-        <label>Ordina per
-          <select name="sort" onchange="this.form.submit()">
-            <% [['consigliati','I nostri consigliati'],['valutazione','Valutazione più alta'],['recensioni','Più recensioni'],['prezzo_asc','Tariffa (dalla più bassa)'],['prezzo_desc','Tariffa (dalla più alta)'],['esperienza','Più esperienza']].forEach(([v,l]) => { %>
-              <option value="<%= v %>" <%= (f.sort || 'consigliati') === v ? 'selected' : '' %>><%= l %></option>
-            <% }) %>
-          </select>
-        </label>
-        <noscript><button class="btn">Ordina</button></noscript>
-      </form>
-    </div>
-    <% if (!results.length) { %>
-      <div class="card empty"><h3>Nessun risultato</h3><p>Prova ad allargare i filtri o a cercare un altro termine.</p></div>
-    <% } %>
-    <% const back = '/cerca?' + new URLSearchParams(Object.entries(query).filter(([,v]) => typeof v === 'string')).toString(); %>
+      </div>
+    </details>
+    <label>Ordina<select name="sort">
+      <% [['consigliati','Consigliati'],['valutazione','Più stelle'],['recensioni','Più recensioni'],['esperienza','Più esperienza']].forEach(([v,l]) => { %>
+        <option value="<%= v %>" <%= (f.sort || 'consigliati') === v ? 'selected' : '' %>><%= l %></option>
+      <% }) %></select></label>
+    <button class="btn primary">Applica</button>
+  </form>
+
+  <% const active = [];
+     if (f.category) { const c = categories.find(c => c.slug === f.category); if (c) active.push([c.name, { category: '' }]); }
+     if (f.sector) { const x = SECTORS.find(x => x.slug === f.sector); if (x) active.push([x.icon + ' ' + x.name, { sector: '' }]); }
+     if (f.q) active.push(['“' + f.q + '”', { q: '' }]);
+     if (f.where) active.push(['📍 ' + f.where, { where: '' }]);
+     if (f.minRating) active.push([f.minRating + ' ★+', { minRating: '' }]);
+     if (f.verified) active.push(['Verificati', { verified: '' }]);
+     if (f.available) active.push(['Disponibili', { available: '' }]); %>
+  <% if (active.length) { %>
+    <div class="active-filters"><% active.forEach(([l, over]) => { %><a class="af" href="<%= qp(over) %>"><%= l %> ✕</a><% }) %><a class="btn-link small" href="/cerca">Azzera tutto</a></div>
+  <% } %>
+
+  <% if (!results.length) { %>
+    <div class="card empty"><h3>Nessun professionista trovato</h3><p>Prova a togliere qualche filtro o a cercare un servizio diverso.</p></div>
+  <% } %>
+  <% const back = qp({ page: query.page || '' }); %>
+  <div class="card-grid">
     <% results.forEach(p => { %><%- include('partials/card', { p, favs, back }) %><% }) %>
-    <% if (pages > 1) { %>
-      <nav class="pager">
-        <% for (let i = 1; i <= pages; i++) { const qs = new URLSearchParams({ ...Object.fromEntries(Object.entries(query).filter(([,v]) => typeof v === 'string')), page: i }); %>
-          <a class="<%= i === page ? 'current' : '' %>" href="/cerca?<%= qs %>"><%= i %></a>
-        <% } %>
-      </nav>
-    <% } %>
-  </section>
+  </div>
+  <% if (pages > 1) { %>
+    <nav class="pager"><% for (let i = 1; i <= pages; i++) { %><a class="<%= i === page ? 'current' : '' %>" href="<%= qp({ page: String(i) }) %>"><%= i %></a><% } %></nav>
+  <% } %>
 </div>
 <%- include('partials/footer') %>

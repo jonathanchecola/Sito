@@ -15,6 +15,10 @@ function open(file = DB_FILE) {
 }
 
 function migrate(db) {
+  const cols = db.prepare("SELECT name FROM pragma_table_info('professionals')").all().map((c) => c.name);
+  if (cols.length && !cols.includes('price_from')) {
+    throw new Error('Il database usa uno schema precedente: rigeneralo con "npm run seed".');
+  }
   db.exec(`
     CREATE TABLE IF NOT EXISTS users (
       id            INTEGER PRIMARY KEY,
@@ -43,9 +47,13 @@ function migrate(db) {
       city             TEXT NOT NULL DEFAULT '',
       region           TEXT NOT NULL DEFAULT '',
       mode             TEXT NOT NULL DEFAULT 'entrambi' CHECK (mode IN ('presenza','remoto','entrambi')),
-      daily_rate       INTEGER,
-      hourly_rate      INTEGER,
+      -- Prezzo "a partire da" e unità: le pratiche si pagano a pratica, i corsi a partecipante, ecc.
+      price_from       INTEGER,
+      price_unit       TEXT NOT NULL DEFAULT 'giornata',
       years_experience INTEGER NOT NULL DEFAULT 0,
+      -- Liste di slug separati da virgola: tipi di servizio (formazione, consulenza, pratiche) e filiere.
+      service_types    TEXT NOT NULL DEFAULT '',
+      sectors          TEXT NOT NULL DEFAULT '',
       skills           TEXT NOT NULL DEFAULT '',
       languages        TEXT NOT NULL DEFAULT 'Italiano',
       certifications   TEXT NOT NULL DEFAULT '',
@@ -64,6 +72,16 @@ function migrate(db) {
       professional_id INTEGER NOT NULL REFERENCES professionals(id) ON DELETE CASCADE,
       category_id     INTEGER NOT NULL REFERENCES categories(id) ON DELETE CASCADE,
       PRIMARY KEY (professional_id, category_id)
+    );
+
+    -- Listino: i singoli servizi offerti con prezzo indicativo.
+    CREATE TABLE IF NOT EXISTS services (
+      id              INTEGER PRIMARY KEY,
+      professional_id INTEGER NOT NULL REFERENCES professionals(id) ON DELETE CASCADE,
+      position        INTEGER NOT NULL DEFAULT 0,
+      name            TEXT NOT NULL,
+      price           INTEGER,
+      unit            TEXT NOT NULL DEFAULT 'pratica'
     );
 
     -- Richiesta di ingaggio: l'equivalente della "prenotazione" di Booking.

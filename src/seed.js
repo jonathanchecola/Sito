@@ -4,74 +4,111 @@ const bcrypt = require('bcryptjs');
 const M = require('./model');
 
 const CATEGORIES = [
-  ['formazione-manageriale', 'Formazione manageriale', '🎯', 'Leadership, gestione team, soft skill'],
-  ['sicurezza-lavoro', 'Sicurezza sul lavoro', '🦺', 'D.Lgs. 81/08, RSPP, antincendio, primo soccorso'],
-  ['digitale-ict', 'Digitale e ICT', '💻', 'Office, cloud, cybersecurity, AI per le aziende'],
-  ['marketing-vendite', 'Marketing e vendite', '📈', 'Digital marketing, social, tecniche di vendita'],
-  ['consulenza-direzionale', 'Consulenza direzionale', '🧭', 'Strategia, organizzazione, controllo di gestione'],
-  ['qualita-iso', 'Qualità e certificazioni ISO', '✅', 'ISO 9001, 14001, 45001, audit'],
-  ['finanza-agevolata', 'Finanza agevolata', '💶', 'Bandi, fondi interprofessionali, PNRR'],
-  ['lingue', 'Lingue straniere', '🌍', 'Inglese business, tedesco, spagnolo'],
-  ['coaching', 'Coaching e sviluppo personale', '🌱', 'Executive e career coaching, public speaking'],
-  ['hr-lavoro', 'Risorse umane e lavoro', '🤝', 'Selezione, welfare, diritto del lavoro, paghe'],
-  ['privacy-compliance', 'Privacy e compliance', '🔒', 'GDPR, modello 231, whistleblowing'],
-  ['sostenibilita', 'Sostenibilità ed ESG', '♻️', 'Bilancio di sostenibilità, CSRD, ESG'],
+  ['finanza-agevolata', 'Finanza agevolata e bandi', '💶', 'CSR/PSR, PNRR, ISMEA, OCM, crediti d’imposta'],
+  ['pratiche-pac', 'Pratiche PAC e fascicolo aziendale', '📋', 'Domanda unica, fascicolo, titoli, ecoschemi'],
+  ['giovani-agricoltori', 'Primo insediamento e giovani', '🌱', 'Insediamento giovani, ISMEA, business plan'],
+  ['agronomia', 'Consulenza agronomica', '🌾', 'Concimazione, difesa integrata, irrigazione, suolo'],
+  ['formazione-obbligatoria', 'Formazione obbligatoria', '🎓', 'Patentino fitosanitari, HACCP, corsi IAP'],
+  ['sicurezza-agricola', 'Sicurezza in agricoltura', '🚜', 'D.Lgs. 81/08, abilitazione trattori, DVR'],
+  ['biologico-certificazioni', 'Biologico e certificazioni', '✅', 'Bio, DOP/IGP, SQNPI, GlobalG.A.P.'],
+  ['multifunzionalita', 'Agriturismo e multifunzionalità', '🏡', 'Agriturismo, fattorie didattiche, vendita diretta'],
+  ['marketing-agroalimentare', 'Marketing ed export', '📦', 'Brand, e-commerce, fiere, mercati esteri'],
+  ['agricoltura-digitale', 'Agricoltura 4.0 e digitale', '🛰️', 'Precision farming, sensori, droni, perizie 4.0'],
+  ['energia-sostenibilita', 'Energia e sostenibilità', '☀️', 'Agrisolare, agrivoltaico, biogas, carbon farming'],
+  ['gestione-fiscale', 'Fisco, lavoro e gestione', '🧾', 'Contabilità agricola, IAP/CD, operai agricoli'],
+  ['zootecnia', 'Zootecnia e benessere animale', '🐄', 'Alimentazione, biosicurezza, ClassyFarm'],
+  ['enologia', 'Viticoltura ed enologia', '🍇', 'Vigneto, cantina, disciplinari DOC/DOCG'],
 ];
 
+// [nome, titolo, città, regione, modalità, prezzo da, unità, anni, categorie, tipi, filiere, competenze, lingue, titoli, listino]
 const PROS = [
-  ['Giulia Ferraro', 'Formatrice in leadership e gestione dei team', 'Milano', 'Lombardia', 'entrambi', 750, 14,
-    ['formazione-manageriale', 'coaching'], 'Leadership, Gestione del cambiamento, Feedback, Delega, Team building', 'Italiano, Inglese', 'ICF ACC, Facilitatore LEGO Serious Play'],
-  ['Marco Esposito', 'RSPP e formatore sicurezza D.Lgs. 81/08', 'Napoli', 'Campania', 'presenza', 450, 18,
-    ['sicurezza-lavoro', 'qualita-iso'], 'RSPP, Antincendio, Primo soccorso, DVR, Lavori in quota', 'Italiano', 'Formatore qualificato DI 6/3/2013, Auditor ISO 45001'],
-  ['Sara Lombardi', 'Consulente digital marketing e social media', 'Bologna', 'Emilia-Romagna', 'remoto', 600, 9,
-    ['marketing-vendite', 'digitale-ict'], 'Meta Ads, Google Ads, SEO, Content strategy, Analytics', 'Italiano, Inglese, Spagnolo', 'Google Ads Certified, HubSpot Inbound'],
-  ['Luca Bianchi', 'Consulente di direzione e controllo di gestione', 'Torino', 'Piemonte', 'entrambi', 900, 22,
-    ['consulenza-direzionale', 'finanza-agevolata'], 'Business plan, Budget, KPI, Riorganizzazione, Passaggio generazionale', 'Italiano, Francese', 'CMC – Certified Management Consultant'],
-  ['Elena Russo', 'Docente di inglese business e comunicazione internazionale', 'Roma', 'Lazio', 'entrambi', 380, 12,
-    ['lingue'], 'Business English, Presentazioni, Negoziazione, Email writing, IELTS', 'Italiano, Inglese', 'CELTA, Cambridge DELTA'],
-  ['Andrea Conti', 'Esperto cybersecurity e formazione IT', 'Padova', 'Veneto', 'remoto', 700, 11,
-    ['digitale-ict', 'privacy-compliance'], 'Cybersecurity awareness, Phishing, NIS2, Microsoft 365, Intelligenza artificiale', 'Italiano, Inglese', 'CISSP, ISO 27001 Lead Auditor'],
-  ['Francesca Gallo', 'Executive coach e trainer di public speaking', 'Firenze', 'Toscana', 'entrambi', 820, 16,
-    ['coaching', 'formazione-manageriale'], 'Public speaking, Executive coaching, Intelligenza emotiva, Time management', 'Italiano, Inglese', 'ICF PCC, Master in Psicologia del lavoro'],
-  ['Paolo Greco', 'Consulente finanza agevolata e fondi interprofessionali', 'Bari', 'Puglia', 'entrambi', 550, 15,
-    ['finanza-agevolata', 'consulenza-direzionale'], 'Fondimpresa, Fondirigenti, Bandi PNRR, Credito d’imposta, Formazione 4.0', 'Italiano', 'Esperto in progettazione europea'],
-  ['Chiara Marino', 'HR consultant e formatrice in selezione del personale', 'Verona', 'Veneto', 'entrambi', 520, 10,
-    ['hr-lavoro', 'formazione-manageriale'], 'Recruiting, Colloquio di selezione, Employer branding, Welfare aziendale, Onboarding', 'Italiano, Tedesco', 'Psicologa del lavoro, Certificazione DISC'],
-  ['Davide Romano', 'DPO e consulente privacy GDPR e modello 231', 'Genova', 'Liguria', 'remoto', 650, 13,
-    ['privacy-compliance', 'qualita-iso'], 'GDPR, DPO, Modello 231, Whistleblowing, Audit privacy', 'Italiano, Inglese', 'DPO certificato UNI 11697, Avvocato'],
-  ['Valentina Costa', 'Consulente sostenibilità, ESG e bilancio CSRD', 'Milano', 'Lombardia', 'entrambi', 780, 8,
-    ['sostenibilita', 'consulenza-direzionale'], 'CSRD, ESRS, Carbon footprint, Bilancio di sostenibilità, Rating ESG', 'Italiano, Inglese', 'GRI Certified Sustainability Professional'],
-  ['Roberto Fontana', 'Auditor e consulente sistemi qualità ISO', 'Ancona', 'Marche', 'presenza', 480, 20,
-    ['qualita-iso', 'sicurezza-lavoro'], 'ISO 9001, ISO 14001, ISO 45001, Audit interni, Lean', 'Italiano', 'Lead Auditor IRCA 9001/14001/45001'],
-  ['Martina De Luca', 'Formatrice Excel, Power BI e produttività digitale', 'Salerno', 'Campania', 'remoto', 420, 7,
-    ['digitale-ict'], 'Excel avanzato, Power BI, Microsoft 365, Automazioni, ChatGPT in ufficio', 'Italiano, Inglese', 'Microsoft Certified Trainer'],
-  ['Stefano Ricci', 'Sales trainer e consulente commerciale B2B', 'Brescia', 'Lombardia', 'entrambi', 690, 17,
-    ['marketing-vendite', 'formazione-manageriale'], 'Vendita consulenziale, Negoziazione, CRM, Key account management', 'Italiano, Inglese', 'Certificazione SPIN Selling'],
-  ['Alessia Moretti', 'Consulente del lavoro e formatrice HR', 'Palermo', 'Sicilia', 'entrambi', 400, 9,
-    ['hr-lavoro', 'finanza-agevolata'], 'Contratti di lavoro, Paghe, Smart working, Apprendistato, Incentivi assunzioni', 'Italiano', 'Consulente del lavoro iscritta all’Albo'],
+  ['Giulia Ferraro', 'Consulente finanza agevolata: CSR, PNRR e ISMEA', 'Benevento', 'Campania', 'entrambi', 900, 'pratica', 14,
+    ['finanza-agevolata', 'giovani-agricoltori'], 'consulenza,pratiche', 'vitivinicolo,olivicolo,ortofrutticolo,agriturismo',
+    'Bandi CSR, PNRR Parco Agrisolare, ISMEA, Business plan, Rendicontazione', 'Italiano, Inglese', 'Dottore agronomo, Esperta in progettazione europea',
+    [['Check-up dei bandi aperti per la tua azienda', 0, 'pratica'], ['Domanda di sostegno CSR – investimenti aziendali', 1500, 'pratica'], ['Business plan per primo insediamento', 900, 'pratica'], ['Rendicontazione e domanda di pagamento', 800, 'pratica']]],
+  ['Marco Esposito', 'Tecnico CAA: domanda PAC, fascicolo aziendale ed ecoschemi', 'Caserta', 'Campania', 'presenza', 60, 'pratica', 18,
+    ['pratiche-pac', 'gestione-fiscale'], 'pratiche,consulenza', 'cerealicolo,zootecnico,ortofrutticolo,olivicolo',
+    'Domanda unica PAC, Fascicolo aziendale, Ecoschemi, Titoli PAC, Condizionalità', 'Italiano', 'Perito agrario, Operatore CAA',
+    [['Domanda unica PAC', 150, 'pratica'], ['Aggiornamento fascicolo aziendale', 60, 'pratica'], ['Trasferimento titoli PAC', 120, 'pratica']]],
+  ['Sara Lombardi', 'Agronoma: difesa integrata, concimazione e irrigazione', 'Foggia', 'Puglia', 'presenza', 180, 'mese', 9,
+    ['agronomia', 'agricoltura-digitale'], 'consulenza,formazione', 'ortofrutticolo,cerealicolo,olivicolo',
+    'Difesa integrata, Piani di concimazione, Irrigazione, Analisi del suolo, Quaderno di campagna', 'Italiano, Inglese', 'Dottore agronomo, Consulente fitosanitario abilitato',
+    [['Sopralluogo e piano colturale', 350, 'giornata'], ['Piano di concimazione aziendale', 400, 'pratica'], ['Assistenza tecnica stagionale', 180, 'mese']]],
+  ['Luca Bianchi', 'Formatore patentino fitosanitari e corsi PAN', 'Verona', 'Veneto', 'entrambi', 120, 'partecipante', 22,
+    ['formazione-obbligatoria', 'agronomia'], 'formazione', 'vitivinicolo,ortofrutticolo,cerealicolo',
+    'Patentino fitosanitari, Rinnovo abilitazione, Uso sostenibile dei fitofarmaci, Taratura irroratrici', 'Italiano', 'Formatore accreditato regionale, Dottore agronomo',
+    [['Corso per il rilascio del patentino (20 ore)', 180, 'partecipante'], ['Corso di rinnovo (12 ore)', 120, 'partecipante'], ['Corso in azienda per i dipendenti', 1200, 'corso']]],
+  ['Elena Russo', 'Consulente agriturismo, fattorie didattiche e vendita diretta', 'Grosseto', 'Toscana', 'entrambi', 450, 'giornata', 12,
+    ['multifunzionalita', 'marketing-agroalimentare'], 'consulenza,formazione,pratiche', 'agriturismo,vitivinicolo,olivicolo',
+    'Avvio agriturismo, SCIA agrituristica, Fattorie didattiche, Vendita diretta, Accoglienza', 'Italiano, Inglese, Tedesco', 'Operatrice di fattoria didattica, Master in turismo rurale',
+    [['Studio di fattibilità agriturismo', 1200, 'pratica'], ['Pratica SCIA agrituristica', 600, 'pratica'], ['Corso accoglienza e ospitalità rurale', 450, 'giornata']]],
+  ['Andrea Conti', 'Esperto agricoltura 4.0 e agricoltura di precisione', 'Bologna', 'Emilia-Romagna', 'entrambi', 600, 'giornata', 11,
+    ['agricoltura-digitale', 'finanza-agevolata'], 'consulenza,formazione,pratiche', 'cerealicolo,ortofrutticolo,vitivinicolo',
+    'Agricoltura di precisione, Droni, Sensori IoT, Perizia 4.0, Mappe di prescrizione', 'Italiano, Inglese', 'Perito industriale, Pilota APR certificato',
+    [['Perizia tecnica per credito d’imposta 4.0', 900, 'pratica'], ['Mappatura con drone', 25, 'ettaro'], ['Formazione software gestionali di campo', 600, 'giornata']]],
+  ['Francesca Gallo', 'Consulente certificazione biologica, SQNPI e GlobalG.A.P.', 'Perugia', 'Umbria', 'entrambi', 700, 'pratica', 16,
+    ['biologico-certificazioni', 'formazione-obbligatoria'], 'consulenza,pratiche,formazione', 'olivicolo,vitivinicolo,ortofrutticolo,apicoltura',
+    'Conversione al biologico, Notifica bio, SQNPI, GlobalG.A.P., Piano di autocontrollo', 'Italiano, Inglese', 'Auditor GlobalG.A.P., Tecnologa alimentare',
+    [['Pratica di conversione al biologico', 700, 'pratica'], ['Preparazione alla visita ispettiva', 400, 'giornata'], ['Consulenza annuale certificazioni', 1500, 'preventivo']]],
+  ['Paolo Greco', 'Commercialista specializzato in impresa agricola', 'Bari', 'Puglia', 'entrambi', 90, 'ora', 15,
+    ['gestione-fiscale', 'giovani-agricoltori'], 'consulenza,pratiche', 'olivicolo,ortofrutticolo,vitivinicolo,cerealicolo,zootecnico',
+    'Regime IVA agricolo, IAP e coltivatore diretto, Società agricole, Passaggio generazionale, Operai agricoli', 'Italiano', 'Dottore commercialista, Revisore legale',
+    [['Riconoscimento qualifica IAP', 500, 'pratica'], ['Costituzione società agricola', 1800, 'pratica'], ['Tenuta contabilità agricola', 120, 'mese']]],
+  ['Chiara Marino', 'Consulente export e marketing per vino e olio', 'Asti', 'Piemonte', 'entrambi', 650, 'giornata', 10,
+    ['marketing-agroalimentare', 'enologia'], 'consulenza,formazione', 'vitivinicolo,olivicolo',
+    'Export, Fiere internazionali, E-commerce, Brand e packaging, Enoturismo', 'Italiano, Inglese, Francese', 'WSET Level 3, Master in Export Management',
+    [['Piano export per un mercato estero', 2500, 'preventivo'], ['Preparazione partecipazione in fiera', 650, 'giornata'], ['Workshop vendita online dei prodotti', 450, 'giornata']]],
+  ['Davide Romano', 'RSPP e formatore sicurezza in agricoltura', 'Cuneo', 'Piemonte', 'presenza', 400, 'giornata', 13,
+    ['sicurezza-agricola', 'formazione-obbligatoria'], 'formazione,consulenza', 'cerealicolo,zootecnico,vitivinicolo,ortofrutticolo,florovivaistico',
+    'DVR agricolo, Abilitazione trattori, Antincendio, Primo soccorso, Lavori stagionali', 'Italiano', 'Formatore qualificato sicurezza, RSPP',
+    [['Corso abilitazione trattori', 220, 'partecipante'], ['Documento di valutazione dei rischi', 600, 'pratica'], ['Incarico RSPP esterno', 900, 'preventivo']]],
+  ['Valentina Costa', 'Consulente energia: Agrisolare, agrivoltaico e biogas', 'Mantova', 'Lombardia', 'entrambi', 2500, 'pratica', 8,
+    ['energia-sostenibilita', 'finanza-agevolata'], 'consulenza,pratiche', 'zootecnico,cerealicolo,lattiero-caseario',
+    'Parco Agrisolare, Agrivoltaico, Biogas e biometano, Comunità energetiche, Carbon farming', 'Italiano, Inglese', 'Ingegnera energetica, EGE certificata',
+    [['Domanda Parco Agrisolare', 2500, 'pratica'], ['Studio di fattibilità agrivoltaico', 3500, 'preventivo'], ['Bilancio di CO2 aziendale', 1200, 'pratica']]],
+  ['Roberto Fontana', 'Medico veterinario: benessere animale e ClassyFarm', 'Reggio Emilia', 'Emilia-Romagna', 'presenza', 380, 'giornata', 20,
+    ['zootecnia', 'biologico-certificazioni'], 'consulenza,formazione', 'zootecnico,lattiero-caseario',
+    'Benessere animale, ClassyFarm, Biosicurezza, Alimentazione bovine, Riduzione antibiotici', 'Italiano', 'Medico veterinario, Valutatore ClassyFarm',
+    [['Valutazione benessere animale', 380, 'giornata'], ['Piano di biosicurezza', 500, 'pratica'], ['Assistenza zootecnica continuativa', 300, 'mese']]],
+  ['Martina De Luca', 'Formatrice HACCP e trasformazione dei prodotti in azienda', 'Salerno', 'Campania', 'entrambi', 90, 'partecipante', 7,
+    ['formazione-obbligatoria', 'multifunzionalita'], 'formazione,consulenza', 'ortofrutticolo,lattiero-caseario,apicoltura,agriturismo',
+    'HACCP, Laboratorio di trasformazione, Etichettatura, Conserve e confetture, Miele', 'Italiano, Inglese', 'Tecnologa alimentare',
+    [['Corso HACCP per operatori', 90, 'partecipante'], ['Manuale di autocontrollo HACCP', 450, 'pratica'], ['Verifica etichette dei prodotti', 60, 'ora']]],
+  ['Stefano Ricci', 'Enologo e consulente di cantina', 'Siena', 'Toscana', 'entrambi', 550, 'giornata', 17,
+    ['enologia', 'biologico-certificazioni'], 'consulenza,formazione', 'vitivinicolo',
+    'Vinificazione, Gestione del vigneto, Disciplinari DOC/DOCG, Analisi sensoriale, Vini biologici', 'Italiano, Inglese', 'Enologo, Dottore in viticoltura ed enologia',
+    [['Consulenza vendemmia e vinificazione', 550, 'giornata'], ['Assistenza enologica annuale', 4000, 'preventivo'], ['Corso di degustazione per il personale', 400, 'corso']]],
+  ['Alessia Moretti', 'Consulente giovani agricoltori e primo insediamento', 'Palermo', 'Sicilia', 'entrambi', 1200, 'pratica', 9,
+    ['giovani-agricoltori', 'finanza-agevolata'], 'consulenza,pratiche,formazione', 'ortofrutticolo,olivicolo,agriturismo,apicoltura',
+    'Primo insediamento, ISMEA Generazione Terra, Business plan, Corsi per giovani agricoltori, Subentro', 'Italiano', 'Dottoressa agronoma',
+    [['Pratica primo insediamento giovani', 1200, 'pratica'], ['Domanda ISMEA Generazione Terra', 1500, 'pratica'], ['Orientamento gratuito', 0, 'pratica']]],
+  ['Nicola Ferri', 'Consulente apicoltura e filiera del miele', 'Macerata', 'Marche', 'entrambi', 300, 'giornata', 12,
+    ['zootecnia', 'biologico-certificazioni'], 'consulenza,formazione,pratiche', 'apicoltura',
+    'Gestione apiario, Nomadismo, Anagrafe apistica, Miele biologico, Smielatura', 'Italiano', 'Tecnico apistico, Esperto in analisi sensoriale del miele',
+    [['Corso base di apicoltura', 150, 'partecipante'], ['Avvio apiario e anagrafe apistica', 300, 'pratica'], ['Visita tecnica in apiario', 300, 'giornata']]],
 ];
 
 const CLIENTS = [
-  ['Laura Vitale', 'laura@acme-spa.it', 'Acme S.p.A.'],
-  ['Giorgio Neri', 'giorgio@metalmeccanica-nord.it', 'Metalmeccanica Nord S.r.l.'],
-  ['Federica Sala', 'federica@studiosala.it', 'Studio Sala & Associati'],
-  ['Matteo Pace', 'matteo@ente-formazione.it', 'Ente Formazione Futuro'],
-  ['Irene Galli', 'irene@retailgroup.it', 'Retail Group Italia'],
+  ['Laura Vitale', 'laura@lequerce.it', 'Azienda Agricola Le Querce'],
+  ['Giorgio Neri', 'giorgio@cantinasanmarco.it', 'Cantina San Marco'],
+  ['Federica Sala', 'federica@ilpoggio.it', 'Agriturismo Il Poggio'],
+  ['Matteo Pace', 'matteo@terreunite.it', 'Cooperativa Terre Unite'],
+  ['Irene Galli', 'irene@oleificiogalli.it', 'Oleificio Galli'],
 ];
 
 const PROS_TEXT = [
-  'Preparazione eccellente e grande capacità di coinvolgere l’aula.',
-  'Materiali chiari e molto pratici, i partecipanti sono rimasti entusiasti.',
-  'Ha adattato il percorso alle nostre esigenze specifiche con grande flessibilità.',
-  'Puntuale, organizzato e sempre disponibile nel follow-up.',
-  'Competenza tecnica altissima, ha risposto a tutte le domande del gruppo.',
-  'Ottimo rapporto qualità/prezzo, risultati misurabili già dopo poche settimane.',
+  'Competente e chiaro: ci ha spiegato ogni passaggio della pratica.',
+  'Domanda presentata nei tempi e finanziamento ottenuto.',
+  'Corso molto pratico, con esempi presi dalla nostra azienda.',
+  'Sempre reperibile, anche nei giorni a ridosso delle scadenze.',
+  'Ha trovato soluzioni concrete per ridurre i costi in campo.',
+  'Ottimo rapporto qualità/prezzo, lo abbiamo consigliato ad altre aziende.',
 ];
 const CONS_TEXT = [
-  '', '', 'Qualche slide un po’ densa, ma nulla di grave.', 'Avremmo voluto un’ulteriore giornata di approfondimento.',
+  '', '', 'Documenti richiesti un po’ all’ultimo momento.', 'Avremmo voluto qualche visita in campo in più.',
   '', 'Tempi di risposta via email talvolta lenti.',
 ];
-const TITLES = ['Esperienza eccellente', 'Consigliatissimo', 'Molto professionale', 'Ottimo percorso', 'Lo richiameremo', 'Valore aggiunto per il team'];
+const TITLES = ['Esperienza eccellente', 'Consigliatissimo', 'Molto professionale', 'Pratica senza pensieri', 'Lo richiameremo', 'Un aiuto prezioso per l’azienda'];
 
 function rng(seed) {
   let s = seed;
@@ -82,7 +119,7 @@ function seed(db) {
   const rand = rng(42);
   const pick = (arr) => arr[Math.floor(rand() * arr.length)];
   const hash = bcrypt.hashSync('password123', 8);
-  const colors = ['#1a5fb4', '#c64600', '#26a269', '#813d9c', '#a51d2d', '#0b7285', '#986a44', '#5e5c64'];
+  const colors = ['#2f6b3f', '#8a5a2b', '#3d7f8c', '#6b4f8a', '#a3472f', '#4f6b2a', '#7a6a2b', '#2b5d6b'];
 
   db.exec('BEGIN');
   try {
@@ -95,9 +132,10 @@ function seed(db) {
 
     const clientIds = CLIENTS.map(([name, email, company]) => Number(insUser.run(email, hash, name, 'client', company).lastInsertRowid));
 
-    const insPro = db.prepare(`INSERT INTO professionals (user_id, slug, headline, bio, city, region, mode, daily_rate,
-      hourly_rate, years_experience, skills, languages, certifications, available, verified, avatar_color)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
+    const insPro = db.prepare(`INSERT INTO professionals (user_id, slug, headline, bio, city, region, mode, price_from,
+      price_unit, years_experience, service_types, sectors, skills, languages, certifications, available, verified, avatar_color)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
+    const insSvc = db.prepare('INSERT INTO services (professional_id, position, name, price, unit) VALUES (?, ?, ?, ?, ?)');
     const insPC = db.prepare('INSERT INTO professional_categories (professional_id, category_id) VALUES (?, ?)');
     const insReq = db.prepare(`INSERT INTO requests (client_id, professional_id, title, description, start_date, days, mode, status, created_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`);
@@ -105,25 +143,27 @@ function seed(db) {
       puntualita, qualita_prezzo, professionalita, overall, title, pros, cons, would_rehire, created_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
 
-    PROS.forEach(([name, headline, city, region, mode, rate, years, cats, skills, langs, certs], i) => {
+    PROS.forEach(([name, headline, city, region, mode, price, unit, years, cats, types, sectors, skills, langs, certs, services], i) => {
       const email = `${M.slugify(name).replace('-', '.')}@esempio.it`;
       const userId = Number(insUser.run(email, hash, name, 'professional', null).lastInsertRowid);
-      const bio = `${headline}. Da ${years} anni affianco aziende, enti di formazione e pubbliche amministrazioni ` +
-        `con percorsi su misura, progettati a partire dall’analisi dei fabbisogni e chiusi con una verifica dei risultati. ` +
+      const bio = `${headline}. Da ${years} anni affianco aziende agricole, cooperative, cantine e agriturismi ` +
+        `con servizi costruiti sulla realtà di ogni azienda agricola: sopralluogo, analisi dei bisogni, scadenze sotto controllo ` +
+        `e un unico referente dall’inizio alla fine. ` +
         `Lavoro ${mode === 'remoto' ? 'prevalentemente da remoto' : mode === 'presenza' ? 'in presenza presso le sedi dei clienti' : 'sia in aula sia online'}, ` +
-        `con metodologie attive: casi reali, esercitazioni, role play e strumenti pronti da usare il giorno dopo.`;
-      const proId = Number(insPro.run(userId, M.uniqueSlug(db, name), headline, bio, city, region, mode, rate,
-        Math.round(rate / 7), years, skills, langs, certs, i % 6 === 5 ? 0 : 1, i % 4 === 3 ? 0 : 1, colors[i % colors.length]).lastInsertRowid);
+        `parlando la lingua di chi lavora in campo e in stalla, non quella degli uffici.`;
+      const proId = Number(insPro.run(userId, M.uniqueSlug(db, name), headline, bio, city, region, mode, price,
+        unit, years, types, sectors, skills, langs, certs, i % 6 === 5 ? 0 : 1, i % 4 === 3 ? 0 : 1, colors[i % colors.length]).lastInsertRowid);
       for (const c of cats) insPC.run(proId, catId[c]);
+      services.forEach(([n, pr, u], k) => insSvc.run(proId, k, n, pr, u));
 
       // Ingaggi completati con recensione (numero variabile per profilo).
-      const nReviews = [12, 9, 6, 15, 4, 7, 11, 3, 5, 8, 2, 10, 6, 9, 0][i];
+      const nReviews = [12, 14, 6, 15, 4, 7, 11, 9, 5, 8, 3, 10, 6, 9, 0, 4][i];
       const quality = 3.6 + rand() * 1.4; // livello medio del professionista
       for (let k = 0; k < nReviews; k++) {
         const clientId = pick(clientIds);
         const daysAgo = Math.floor(rand() * 600) + 10;
         const when = new Date(Date.now() - daysAgo * 864e5).toISOString().slice(0, 19).replace('T', ' ');
-        const reqId = Number(insReq.run(clientId, proId, `Percorso: ${skills.split(',')[k % 3].trim()}`, 'Ingaggio dimostrativo.',
+        const reqId = Number(insReq.run(clientId, proId, services[k % services.length][0], 'Ingaggio dimostrativo.',
           when.slice(0, 10), 1 + Math.floor(rand() * 4), mode, 'completata', when).lastInsertRowid);
         const score = () => Math.max(1, Math.min(5, Math.round(quality + (rand() - 0.45) * 1.6)));
         const r = { competenza: score(), comunicazione: score(), puntualita: score(), qualita_prezzo: score(), professionalita: score() };
@@ -135,8 +175,8 @@ function seed(db) {
 
     // Una richiesta in attesa per vedere il flusso nella dashboard del professionista.
     const giulia = db.prepare("SELECT id FROM professionals WHERE slug = 'giulia-ferraro'").get();
-    insReq.run(clientIds[0], giulia.id, 'Corso leadership per 12 responsabili di reparto',
-      'Vorremmo un percorso di 3 giornate in presenza a Milano, tra febbraio e marzo.', '2027-02-10', 3, 'presenza', 'in_attesa',
+    insReq.run(clientIds[0], giulia.id, 'Domanda CSR per trattore e impianto di irrigazione',
+      'Azienda di 18 ettari a ortofrutta. Vorremmo capire se rientriamo nel bando investimenti e presentare la domanda.', '2027-02-10', null, 'presenza', 'in_attesa',
       new Date().toISOString().slice(0, 19).replace('T', ' '));
     db.exec('COMMIT');
   } catch (e) {
