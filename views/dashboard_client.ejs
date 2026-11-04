@@ -1,0 +1,33 @@
+<%- include('partials/header') %>
+<div class="wrap section">
+  <div class="dash-head">
+    <div><h1>Ciao <%= user.name.split(' ')[0] %></h1><p class="muted"><%= user.company || 'Area committente' %></p></div>
+    <div class="dash-actions"><a class="btn primary" href="/cerca">Cerca professionisti</a></div>
+  </div>
+  <section class="card">
+    <h2>Le mie richieste</h2>
+    <% if (!requests.length) { %><p class="muted">Non hai ancora inviato richieste. <a href="/cerca">Trova un professionista</a>.</p><% } else { %>
+    <div class="table-wrap"><table class="table">
+      <thead><tr><th>Richiesta</th><th>Professionista</th><th>Dettagli</th><th>Stato</th><th></th></tr></thead>
+      <tbody>
+      <% requests.forEach(r => {
+           const tok = `<input type="hidden" name="_csrf" value="${csrf}">`;
+           let actions = '';
+           if (r.status === 'accettata') actions = `<form method="post" action="/richieste/${r.id}/stato">${tok}<button class="btn" name="status" value="completata">Segna come completata</button></form>`;
+           if (['in_attesa','accettata'].includes(r.status)) actions += `<form method="post" action="/richieste/${r.id}/stato">${tok}<button class="btn-link danger" name="status" value="annullata">Annulla</button></form>`;
+           if (r.status === 'completata' && !r.review_id) actions = `<a class="btn primary" href="/richieste/${r.id}/recensione">★ Lascia una recensione</a>`;
+           if (r.status === 'completata' && r.review_id) actions = `<span class="small ok">✔ Recensito</span>`;
+           const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+           const who = `<a href="/professionisti/${esc(r.pro_slug)}"><strong>${esc(r.pro_name)}</strong></a><br><span class="small muted">${esc(r.pro_headline)}</span>`;
+      %><%- include('partials/request_row', { r, who, actions }) %><% }) %>
+      </tbody>
+    </table></div>
+    <% } %>
+  </section>
+  <section>
+    <h2>I miei preferiti</h2>
+    <% if (!favorites.length) { %><div class="card"><p class="muted">Salva i professionisti con il ♥ per ritrovarli qui.</p></div><% } %>
+    <% const favs = new Set(favorites.map(f => f.id)); favorites.forEach(p => { %><%- include('partials/card', { p, favs, back: '/area-personale' }) %><% }) %>
+  </section>
+</div>
+<%- include('partials/footer') %>

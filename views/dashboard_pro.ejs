@@ -1,0 +1,43 @@
+<%- include('partials/header') %>
+<% const pending = requests.filter(r => r.status === 'in_attesa').length; %>
+<div class="wrap section">
+  <div class="dash-head">
+    <div><h1>Ciao <%= p.name.split(' ')[0] %></h1><p class="muted">Gestisci il tuo profilo, le richieste di ingaggio e le recensioni.</p></div>
+    <div class="dash-actions"><a class="btn" href="/professionisti/<%= p.slug %>">Vedi profilo pubblico</a><a class="btn primary" href="/area-personale/profilo">Modifica profilo</a></div>
+  </div>
+  <% if (!p.published) { %><div class="flash warn">Il profilo non è pubblico: completalo per comparire nelle ricerche.</div><% } %>
+  <div class="kpis">
+    <div><strong><%= p.rating != null ? p.rating.toFixed(1) + ' ★' : '–' %></strong><span>valutazione media</span></div>
+    <div><strong><%= p.review_count %></strong><span>recensioni</span></div>
+    <div><strong><%= pending %></strong><span>richieste in attesa</span></div>
+    <div><strong><%= requests.filter(r => r.status === 'completata').length %></strong><span>ingaggi completati</span></div>
+  </div>
+  <section class="card">
+    <h2>Richieste di ingaggio</h2>
+    <% if (!requests.length) { %><p class="muted">Nessuna richiesta ricevuta finora.</p><% } else { %>
+    <div class="table-wrap"><table class="table">
+      <thead><tr><th>Richiesta</th><th>Committente</th><th>Dettagli</th><th>Stato</th><th></th></tr></thead>
+      <tbody>
+      <% requests.forEach(r => {
+           let actions = '';
+           const tok = `<input type="hidden" name="_csrf" value="${csrf}">`;
+           if (r.status === 'in_attesa') actions = `<form method="post" action="/richieste/${r.id}/stato" class="stack tight">${tok}<input name="note" placeholder="Nota (facoltativa)"><div class="btn-row"><button class="btn primary" name="status" value="accettata">Accetta</button><button class="btn" name="status" value="rifiutata">Rifiuta</button></div></form>`;
+           else if (r.status === 'accettata') actions = `<form method="post" action="/richieste/${r.id}/stato">${tok}<button class="btn" name="status" value="completata">Segna come completata</button></form>`;
+           const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+           const who = `<strong>${esc(r.client_name)}</strong><br><span class="small muted">${esc(r.client_company || '')}</span>${r.status === 'accettata' || r.status === 'completata' ? `<br><a class="small" href="mailto:${esc(r.client_email)}">${esc(r.client_email)}</a>` : ''}`;
+      %><%- include('partials/request_row', { r, who, actions }) %><% }) %>
+      </tbody>
+    </table></div>
+    <% } %>
+  </section>
+  <section class="card">
+    <h2>Ultime recensioni</h2>
+    <% if (!reviews.length) { %><p class="muted">Ancora nessuna recensione.</p><% } %>
+    <% reviews.slice(0, 5).forEach(r => { %>
+      <div class="mini-review"><span class="score-box sm"><%= Number(r.overall).toFixed(1) %></span>
+        <div><strong><%= r.title %></strong> <span class="muted small">· <%= r.client_name.split(' ')[0] %>, <%= fmtDate(r.created_at) %></span><br><span class="small"><%= r.pros %></span></div></div>
+    <% }) %>
+    <% if (reviews.length) { %><a class="btn-link" href="/professionisti/<%= p.slug %>#recensioni">Tutte le recensioni e risposte ›</a><% } %>
+  </section>
+</div>
+<%- include('partials/footer') %>

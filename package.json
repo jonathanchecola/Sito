@@ -1,0 +1,26 @@
+{
+  "name": "profilipro",
+  "version": "0.1.0",
+  "description": "Marketplace di formatori, consulenti e professionisti con profili e valutazioni a stelle",
+  "main": "src/server.js",
+  "private": true,
+  "scripts": {
+    "start": "node --no-warnings src/server.js",
+    "dev": "node --no-warnings --watch src/server.js",
+    "seed": "node --no-warnings src/seed.js",
+    "test": "node --no-warnings --test test/*.test.js"
+  },
+  "engines": {
+    "node": ">=22.5"
+  },
+  "license": "UNLICENSED",
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "ejs": "^7.0.2",
+    "express": "^4.22.3",
+    "express-session": "^1.19.0"
+  },
+  "devDependencies": {
+    "supertest": "^7.3.1"
+  }
+}

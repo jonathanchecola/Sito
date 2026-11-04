@@ -1,0 +1,7 @@
+<div class="score">
+  <div class="score-text">
+    <strong><%= p.ratingLabel %></strong>
+    <small><%= p.review_count %> recension<%= p.review_count === 1 ? 'e' : 'i' %></small>
+  </div>
+  <div class="score-box <%= p.rating == null ? 'new' : '' %>"><%= p.rating == null ? '–' : p.rating.toFixed(1) %></div>
+</div>

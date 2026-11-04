@@ -1,0 +1,19 @@
+<%- include('partials/header') %>
+<div class="wrap narrow">
+  <section class="card form-card">
+    <h1>Accedi</h1>
+    <% if (error) { %><div class="flash error"><%= error %></div><% } %>
+    <form method="post" action="/accedi" class="stack">
+      <input type="hidden" name="_csrf" value="<%= csrf %>"><input type="hidden" name="next" value="<%= next %>">
+      <label>Email<input type="email" name="email" value="<%= email %>" required autocomplete="email"></label>
+      <label>Password<input type="password" name="password" required autocomplete="current-password"></label>
+      <button class="btn primary full">Accedi</button>
+    </form>
+    <p class="small">Non hai un account? <a href="/registrati">Registrati</a></p>
+    <details class="demo"><summary>Account dimostrativi</summary>
+      <p class="small">Password per tutti: <code>password123</code></p>
+      <ul class="small"><li>Azienda: <code>laura@acme-spa.it</code></li><li>Professionista: <code>giulia.ferraro@esempio.it</code></li><li>Admin: <code>admin@profilipro.it</code></li></ul>
+    </details>
+  </section>
+</div>
+<%- include('partials/footer') %>

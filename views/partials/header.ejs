@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%= title %> · ProfiliPro</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="wrap topbar-inner">
+    <a href="/" class="logo">Profili<span>Pro</span></a>
+    <nav class="nav">
+      <a href="/cerca">Cerca professionisti</a>
+      <a href="/come-funziona">Come funziona</a>
+      <% if (user) { %>
+        <a href="/area-personale" class="nav-user"><span class="avatar sm"><%= user.name.split(' ').map(w => w[0]).slice(0,2).join('') %></span><%= user.name.split(' ')[0] %></a>
+        <form method="post" action="/esci" class="inline"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn-link light">Esci</button></form>
+      <% } else { %>
+        <a href="/registrati?ruolo=professionista" class="btn outline-light">Iscriviti come professionista</a>
+        <a href="/registrati" class="btn light">Registrati</a>
+        <a href="/accedi" class="btn light">Accedi</a>
+      <% } %>
+    </nav>
+  </div>
+</header>
+<% if (flash) { %><div class="wrap"><div class="flash <%= flash.type %>"><%= flash.text %></div></div><% } %>
+<main>

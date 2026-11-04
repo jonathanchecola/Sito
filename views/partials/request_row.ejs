@@ -1,0 +1,8 @@
+<tr>
+  <td><strong><%= r.title %></strong><br><span class="small muted"><%= r.description %></span>
+    <% if (r.response_note) { %><br><span class="small">💬 <%= r.response_note %></span><% } %></td>
+  <td><%- who %></td>
+  <td class="small"><%= fmtDate(r.start_date) %><% if (r.days) { %><br><%= r.days %> gg<% } %><br><%= MODES[r.mode] %><% if (r.budget) { %><br><%= fmtEuro(r.budget) %><% } %></td>
+  <td><span class="status s-<%= r.status %>"><%= STATUS[r.status] %></span></td>
+  <td class="actions"><%- actions %></td>
+</tr>

@@ -1,0 +1,1 @@
+<% const s = stars(value); %><span class="stars" aria-label="<%= value ? Number(value).toFixed(1) : 0 %> su 5"><% for (let i=0;i<s.full;i++){ %><i class="st full">★</i><% } %><% if (s.half){ %><i class="st half">★</i><% } %><% for (let i=0;i<s.empty;i++){ %><i class="st">★</i><% } %></span>

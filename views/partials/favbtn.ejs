@@ -1,0 +1,6 @@
+<% if (user && user.role === 'client') { %>
+<form method="post" action="/preferiti/<%= p.id %>" class="fav-form">
+  <input type="hidden" name="_csrf" value="<%= csrf %>"><input type="hidden" name="back" value="<%= back %>">
+  <button class="fav <%= isFav ? 'on' : '' %>" title="<%= isFav ? 'Rimuovi dai preferiti' : 'Salva nei preferiti' %>" aria-pressed="<%= isFav %>">♥</button>
+</form>
+<% } %>

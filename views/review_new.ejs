@@ -1,0 +1,30 @@
+<%- include('partials/header') %>
+<div class="wrap narrow">
+  <section class="card form-card">
+    <h1>Com'è andata con <%= r.pro_name %>?</h1>
+    <p class="muted">Ingaggio: <strong><%= r.title %></strong>. La recensione sarà pubblica e contrassegnata come verificata.</p>
+    <% if (error) { %><div class="flash error"><%= error %></div><% } %>
+    <form method="post" action="/richieste/<%= r.id %>/recensione" class="stack">
+      <input type="hidden" name="_csrf" value="<%= csrf %>">
+      <% CRITERIA.forEach(c => { %>
+        <div class="rate-row"><span><%= c.label %></span>
+          <div class="star-input">
+            <% for (let s = 5; s >= 1; s--) { %>
+              <input type="radio" id="<%= c.key %>-<%= s %>" name="<%= c.key %>" value="<%= s %>" <%= Number(v[c.key]) === s ? 'checked' : '' %> required>
+              <label for="<%= c.key %>-<%= s %>" title="<%= s %> stelle">★</label>
+            <% } %>
+          </div>
+        </div>
+      <% }) %>
+      <label>Titolo<input name="title" value="<%= v.title || '' %>" maxlength="120" placeholder="Riassumi in poche parole"></label>
+      <label>😊 Cosa ti è piaciuto?<textarea name="pros" rows="3"><%= v.pros || '' %></textarea></label>
+      <label>😐 Cosa si potrebbe migliorare?<textarea name="cons" rows="3"><%= v.cons || '' %></textarea></label>
+      <fieldset class="inline-radios"><legend>Lo ingaggeresti di nuovo?</legend>
+        <label><input type="radio" name="would_rehire" value="1" <%= v.would_rehire !== 0 ? 'checked' : '' %>> Sì</label>
+        <label><input type="radio" name="would_rehire" value="0" <%= v.would_rehire === 0 ? 'checked' : '' %>> No</label>
+      </fieldset>
+      <button class="btn primary full">Pubblica recensione</button>
+    </form>
+  </section>
+</div>
+<%- include('partials/footer') %>

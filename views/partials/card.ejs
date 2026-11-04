@@ -1,0 +1,25 @@
+<article class="card result">
+  <div class="result-media">
+    <div class="avatar xl" style="background:<%= p.avatar_color %>"><%= p.initials %></div>
+    <%- include('favbtn', { p, isFav: favs.has(p.id), back }) %>
+  </div>
+  <div class="result-body">
+    <h3><a href="/professionisti/<%= p.slug %>"><%= p.name %></a>
+      <% if (p.verified) { %><span class="verified" title="Identità e P.IVA verificate">✔ Verificato</span><% } %></h3>
+    <% if (p.rating != null) { %><div><%- include('stars', { value: p.rating }) %></div><% } %>
+    <p class="headline"><%= p.headline %></p>
+    <p class="meta">📍 <%= p.city %><%= p.region ? ', ' + p.region : '' %> · <%= MODES[p.mode] %> · <%= p.years_experience %> anni di esperienza</p>
+    <div class="tags"><% p.skillList.slice(0,4).forEach(s => { %><span class="tag"><%= s %></span><% }) %></div>
+    <% if (p.rehire_pct != null && p.review_count) { %><p class="rehire">👍 Il <%= Math.round(p.rehire_pct) %>% lo ingaggerebbe di nuovo</p><% } %>
+    <% if (!p.available) { %><p class="unavailable">Disponibilità limitata nei prossimi mesi</p><% } %>
+  </div>
+  <div class="result-side">
+    <%- include('badge', { p }) %>
+    <div class="price">
+      <small>Tariffa giornaliera da</small>
+      <strong><%= fmtEuro(p.daily_rate) %></strong>
+      <small>+ IVA</small>
+    </div>
+    <a class="btn primary" href="/professionisti/<%= p.slug %>">Vedi disponibilità ›</a>
+  </div>
+</article>

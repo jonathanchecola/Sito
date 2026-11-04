@@ -1,0 +1,17 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "gradient-text",
+        "value": "*",
+        "files": [
+          "public/css/style.css"
+        ],
+        "createdAt": "2026-11-04T22:17:51.141Z",
+        "reason": "Claude: functional half-star fill in rating stars, not decorative gradient text"
+      }
+    ]
+  }
+}

@@ -1,0 +1,31 @@
+<%- include('partials/header') %>
+<div class="wrap section">
+  <h1>Amministrazione</h1>
+  <section class="card">
+    <h2>Professionisti (<%= professionals.length %>)</h2>
+    <div class="table-wrap"><table class="table">
+      <thead><tr><th>Nome</th><th>Email</th><th>Stato</th><th>Verifica</th></tr></thead>
+      <tbody><% professionals.forEach(p => { %>
+        <tr><td><a href="/professionisti/<%= p.slug %>"><%= p.name %></a><br><span class="small muted"><%= p.headline %></span></td>
+          <td class="small"><%= p.email %></td>
+          <td><span class="status <%= p.published ? 's-accettata' : 's-in_attesa' %>"><%= p.published ? 'Pubblico' : 'Bozza' %></span></td>
+          <td><form method="post" action="/admin/professionisti/<%= p.id %>/verifica"><input type="hidden" name="_csrf" value="<%= csrf %>">
+            <button class="btn <%= p.verified ? '' : 'primary' %>"><%= p.verified ? 'Revoca verifica' : 'Verifica' %></button></form></td></tr>
+      <% }) %></tbody>
+    </table></div>
+  </section>
+  <section class="card">
+    <h2>Moderazione recensioni (ultime 50)</h2>
+    <div class="table-wrap"><table class="table">
+      <thead><tr><th>Voto</th><th>Recensione</th><th>Da → A</th><th></th></tr></thead>
+      <tbody><% reviews.forEach(r => { %>
+        <tr class="<%= r.hidden ? 'dimmed' : '' %>"><td><span class="score-box sm"><%= Number(r.overall).toFixed(1) %></span></td>
+          <td><strong><%= r.title %></strong><br><span class="small"><%= r.pros %> <%= r.cons %></span></td>
+          <td class="small"><%= r.client_name %> → <%= r.pro_name %></td>
+          <td><form method="post" action="/admin/recensioni/<%= r.id %>/visibilita"><input type="hidden" name="_csrf" value="<%= csrf %>">
+            <button class="btn"><%= r.hidden ? 'Ripristina' : 'Nascondi' %></button></form></td></tr>
+      <% }) %></tbody>
+    </table></div>
+  </section>
+</div>
+<%- include('partials/footer') %>

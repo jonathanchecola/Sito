@@ -1,0 +1,62 @@
+<%- include('partials/header') %>
+<section class="hero">
+  <div class="wrap">
+    <h1>Trova il formatore o consulente giusto, valutato da chi lo ha già scelto</h1>
+    <p class="lead">Profili verificati, recensioni reali dopo ogni ingaggio, richieste di disponibilità in un clic.</p>
+    <form class="searchbar" action="/cerca" method="get">
+      <label class="sb-field"><span>🔎</span><input name="q" placeholder="Competenza, tema o nome (es. leadership, GDPR, Excel)"></label>
+      <label class="sb-field"><span>📍</span><input name="where" placeholder="Città o regione"></label>
+      <label class="sb-field"><span>🖥️</span>
+        <select name="mode"><option value="">Qualsiasi modalità</option><option value="presenza">In presenza</option><option value="remoto">Da remoto</option></select>
+      </label>
+      <button class="btn primary big">Cerca</button>
+    </form>
+  </div>
+</section>
+
+<section class="wrap section">
+  <div class="kpis">
+    <div><strong><%= stats.pros %></strong><span>professionisti attivi</span></div>
+    <div><strong><%= stats.reviews %></strong><span>recensioni verificate</span></div>
+    <div><strong><%= stats.avg || '–' %> ★</strong><span>valutazione media</span></div>
+  </div>
+</section>
+
+<section class="wrap section">
+  <h2>Esplora per categoria</h2>
+  <div class="cat-grid">
+    <% categories.forEach(c => { %>
+      <a class="cat" href="/cerca?category=<%= c.slug %>">
+        <span class="cat-icon"><%= c.icon %></span>
+        <strong><%= c.name %></strong>
+        <small><%= c.count %> professionist<%= c.count === 1 ? 'a' : 'i' %></small>
+      </a>
+    <% }) %>
+  </div>
+</section>
+
+<section class="wrap section">
+  <h2>I più apprezzati</h2>
+  <p class="muted">Classifica basata su valutazione media e numero di recensioni verificate.</p>
+  <div class="tile-grid">
+    <% top.forEach(p => { %>
+      <a class="tile card" href="/professionisti/<%= p.slug %>">
+        <div class="avatar lg" style="background:<%= p.avatar_color %>"><%= p.initials %></div>
+        <strong><%= p.name %></strong>
+        <span class="muted small"><%= p.headline %></span>
+        <span class="small">📍 <%= p.city %></span>
+        <div class="tile-score"><span class="score-box sm"><%= p.rating.toFixed(1) %></span> <strong><%= p.ratingLabel %></strong> <span class="muted small">· <%= p.review_count %> recensioni</span></div>
+        <span class="small">da <strong><%= fmtEuro(p.daily_rate) %></strong>/giorno</span>
+      </a>
+    <% }) %>
+  </div>
+</section>
+
+<section class="wrap section cta">
+  <div>
+    <h2>Sei un formatore o un consulente?</h2>
+    <p>Crea gratis il tuo profilo, fatti trovare dalle aziende e costruisci la tua reputazione con recensioni verificate.</p>
+  </div>
+  <a class="btn primary big" href="/registrati?ruolo=professionista">Iscriviti come professionista</a>
+</section>
+<%- include('partials/footer') %>

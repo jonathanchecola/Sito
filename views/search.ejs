@@ -1,0 +1,76 @@
+<%- include('partials/header') %>
+<section class="hero slim">
+  <div class="wrap">
+    <form class="searchbar" action="/cerca" method="get">
+      <label class="sb-field"><span>🔎</span><input name="q" value="<%= f.q %>" placeholder="Competenza, tema o nome"></label>
+      <label class="sb-field"><span>📍</span><input name="where" value="<%= f.where %>" placeholder="Città o regione"></label>
+      <% if (f.category) { %><input type="hidden" name="category" value="<%= f.category %>"><% } %>
+      <button class="btn primary big">Cerca</button>
+    </form>
+  </div>
+</section>
+<div class="wrap layout-search">
+  <aside class="filters card">
+    <form method="get" action="/cerca" id="filters">
+      <input type="hidden" name="q" value="<%= f.q %>"><input type="hidden" name="where" value="<%= f.where %>">
+      <input type="hidden" name="sort" value="<%= f.sort %>">
+      <h3>Filtra per:</h3>
+      <fieldset><legend>Categoria</legend>
+        <label class="opt"><input type="radio" name="category" value="" <%= !f.category ? 'checked' : '' %>> Tutte</label>
+        <% categories.forEach(c => { %>
+          <label class="opt"><input type="radio" name="category" value="<%= c.slug %>" <%= f.category === c.slug ? 'checked' : '' %>> <%= c.name %> <span class="muted">(<%= c.count %>)</span></label>
+        <% }) %>
+      </fieldset>
+      <fieldset><legend>Valutazione</legend>
+        <% [['', 'Qualsiasi'], ['4.5', 'Eccellente: 4,5+'], ['4', 'Ottimo: 4+'], ['3.5', 'Buono: 3,5+']].forEach(([v, l]) => { %>
+          <label class="opt"><input type="radio" name="minRating" value="<%= v %>" <%= String(f.minRating || '') === v ? 'checked' : '' %>> <%= l %></label>
+        <% }) %>
+      </fieldset>
+      <fieldset><legend>Modalità</legend>
+        <% [['', 'Qualsiasi'], ['presenza', 'In presenza'], ['remoto', 'Da remoto']].forEach(([v, l]) => { %>
+          <label class="opt"><input type="radio" name="mode" value="<%= v %>" <%= (f.mode || '') === v ? 'checked' : '' %>> <%= l %></label>
+        <% }) %>
+      </fieldset>
+      <fieldset><legend>Tariffa giornaliera max</legend>
+        <input type="range" name="maxRate" min="300" max="1000" step="50" value="<%= f.maxRate || 1000 %>" oninput="this.nextElementSibling.textContent='€ '+this.value">
+        <output>€ <%= f.maxRate || 1000 %></output>
+      </fieldset>
+      <fieldset><legend>Altro</legend>
+        <label class="opt"><input type="checkbox" name="verified" value="1" <%= f.verified ? 'checked' : '' %>> Solo profili verificati</label>
+        <label class="opt"><input type="checkbox" name="available" value="1" <%= f.available ? 'checked' : '' %>> Disponibili ora</label>
+      </fieldset>
+      <button class="btn primary full">Applica filtri</button>
+      <a class="btn-link" href="/cerca">Azzera filtri</a>
+    </form>
+  </aside>
+  <section class="results">
+    <div class="results-head">
+      <h2><%= f.where || 'Italia' %>: <%= total %> professionist<%= total === 1 ? 'a trovato' : 'i trovati' %></h2>
+      <form method="get" action="/cerca" class="sort">
+        <% for (const k of ['q','where','category','mode','maxRate','minRating']) { if (f[k]) { %><input type="hidden" name="<%= k %>" value="<%= f[k] %>"><% } } %>
+        <% if (f.verified) { %><input type="hidden" name="verified" value="1"><% } %><% if (f.available) { %><input type="hidden" name="available" value="1"><% } %>
+        <label>Ordina per
+          <select name="sort" onchange="this.form.submit()">
+            <% [['consigliati','I nostri consigliati'],['valutazione','Valutazione più alta'],['recensioni','Più recensioni'],['prezzo_asc','Tariffa (dalla più bassa)'],['prezzo_desc','Tariffa (dalla più alta)'],['esperienza','Più esperienza']].forEach(([v,l]) => { %>
+              <option value="<%= v %>" <%= (f.sort || 'consigliati') === v ? 'selected' : '' %>><%= l %></option>
+            <% }) %>
+          </select>
+        </label>
+        <noscript><button class="btn">Ordina</button></noscript>
+      </form>
+    </div>
+    <% if (!results.length) { %>
+      <div class="card empty"><h3>Nessun risultato</h3><p>Prova ad allargare i filtri o a cercare un altro termine.</p></div>
+    <% } %>
+    <% const back = '/cerca?' + new URLSearchParams(Object.entries(query).filter(([,v]) => typeof v === 'string')).toString(); %>
+    <% results.forEach(p => { %><%- include('partials/card', { p, favs, back }) %><% }) %>
+    <% if (pages > 1) { %>
+      <nav class="pager">
+        <% for (let i = 1; i <= pages; i++) { const qs = new URLSearchParams({ ...Object.fromEntries(Object.entries(query).filter(([,v]) => typeof v === 'string')), page: i }); %>
+          <a class="<%= i === page ? 'current' : '' %>" href="/cerca?<%= qs %>"><%= i %></a>
+        <% } %>
+      </nav>
+    <% } %>
+  </section>
+</div>
+<%- include('partials/footer') %>
