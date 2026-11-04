@@ -14,7 +14,7 @@
     <div class="ph-side">
       <%- include('partials/badge', { p }) %>
       <% if (p.rating != null) { %><%- include('partials/stars', { value: p.rating }) %><% } %>
-      <%- include('partials/favbtn', { p, isFav, back: '/professionisti/' + p.slug }) %>
+      <div class="btn-row"><%- include('partials/favbtn', { p, isFav, back: '/professionisti/' + p.slug }) %><a class="btn primary" href="#richiesta">Chiedi un preventivo</a></div>
     </div>
   </section>
 </div>
@@ -48,7 +48,7 @@
     </section>
 
     <section class="card" id="recensioni">
-      <h2>Valutazioni dei committenti</h2>
+      <h2>Valutazioni delle aziende</h2>
       <% if (!p.review_count) { %>
         <p class="muted">Ancora nessuna recensione. Le recensioni possono essere lasciate solo da chi ha completato un ingaggio con questo professionista.</p>
       <% } else { %>
@@ -71,7 +71,8 @@
         </div>
       </div>
       <div class="reviews">
-        <% reviews.forEach(r => { %>
+        <% reviews.forEach((r, i) => { %>
+          <% if (i === 5) { %></div><details class="more-reviews"><summary class="btn">Mostra tutte le <%= reviews.length %> recensioni</summary><div class="reviews"><% } %>
           <article class="review">
             <div class="rv-author">
               <div class="avatar sm grey"><%= r.client_name.split(' ').map(w => w[0]).slice(0,2).join('') %></div>
@@ -99,6 +100,7 @@
           </article>
         <% }) %>
       </div>
+      <% if (reviews.length > 5) { %></details><% } %>
       <% } %>
     </section>
   </div>

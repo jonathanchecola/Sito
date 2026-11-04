@@ -36,6 +36,8 @@ h1 { font-size: 2rem; } h2 { font-size: 1.4rem; } h3 { font-size: 1.1rem; } h4 {
 .muted { color: var(--muted); } .small { font-size: .86rem; }
 .ok { color: var(--leaf); } .unavailable { color: var(--earth); font-size: .85rem; }
 .inline { display: inline; }
+.show-sm { display: none; }
+.table .actions { white-space: nowrap; }
 
 /* Header chiaro */
 .topbar { background: var(--bg); border-bottom: 1px solid var(--line); }
@@ -176,6 +178,10 @@ h1 { font-size: 2rem; } h2 { font-size: 1.4rem; } h3 { font-size: 1.1rem; } h4 {
 .pager a { min-width: 38px; text-align: center; padding: 6px 12px; border: 1px solid var(--line); border-radius: 999px; background: #fff; }
 .pager a.current { background: var(--forest-2); color: #fff; border-color: var(--forest-2); }
 .empty { text-align: center; padding: 40px; }
+.more-reviews { margin-top: 8px; }
+.more-reviews summary { list-style: none; margin: 8px 0; }
+.more-reviews summary::-webkit-details-marker { display: none; }
+.more-reviews[open] summary { display: none; }
 
 /* Profilo */
 .crumbs { font-size: .85rem; color: var(--muted); margin-top: 18px; margin-bottom: 12px; }
@@ -234,7 +240,8 @@ label.opt, .role-opt { font-weight: 400; }
 input:not([type=radio]):not([type=checkbox]):not([type=range]), select, textarea { font: inherit; font-weight: 400; text-transform: none; letter-spacing: 0; color: var(--ink); padding: 10px 12px; border: 1px solid #cfd3c5; border-radius: var(--radius-sm); background: #fff; width: 100%; }
 input:focus, select:focus, textarea:focus { outline: 3px solid rgba(242,194,48,.45); border-color: var(--forest-2); }
 input[type=checkbox], input[type=radio] { accent-color: var(--forest-2); }
-label.opt { flex-direction: row; align-items: center; gap: 8px; text-transform: none; letter-spacing: 0; font-size: .92rem; color: var(--ink); flex-wrap: wrap; }
+label.opt { flex-direction: row; align-items: flex-start; gap: 8px; text-transform: none; letter-spacing: 0; font-size: .92rem; color: var(--ink); line-height: 1.35; padding: 2px 0; }
+label.opt input { margin-top: 2px; flex-shrink: 0; }
 .row2, .row3 { display: grid; gap: 12px; }
 .row2 { grid-template-columns: 1fr 1fr; } .row3 { grid-template-columns: repeat(3, 1fr); }
 .check-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 4px 16px; }
@@ -314,6 +321,10 @@ fieldset { border: 0; padding: 0; margin: 0; } legend { font-weight: 700; font-s
   .svc-row { grid-template-columns: 1fr 90px; }
   .svc-row select { grid-column: 1 / -1; }
   .nav { gap: 12px; }
-  .nav-sep { display: none; }
+  .nav-sep, .nav > a[href^="/cerca"] { display: none; }
+  .topbar-inner { flex-wrap: nowrap; min-height: 64px; }
+  .nav { flex-wrap: nowrap; }
+  .nav .btn.wheat { padding: 7px 14px; font-size: .88rem; }
+  .hide-sm { display: none; } .show-sm { display: inline; }
   .cta { padding: 24px; }
 }

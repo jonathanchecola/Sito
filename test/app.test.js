@@ -48,7 +48,7 @@ test('filtri di ricerca: categoria, modalità, rating minimo, ordinamento', () =
 test('profilo pubblico con riepilogo valutazioni', async () => {
   const res = await request(app).get('/professionisti/giulia-ferraro');
   assert.equal(res.status, 200);
-  assert.match(res.text, /Valutazioni dei committenti/);
+  assert.match(res.text, /Valutazioni delle aziende/);
   assert.match(res.text, /Puntualità/);
   assert.match(res.text, /Servizi e listino/);
   assert.match(res.text, /Domanda di sostegno CSR/);

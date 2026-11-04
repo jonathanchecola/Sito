@@ -19,7 +19,7 @@
       <label>Titolo<input name="title" value="<%= v.title || '' %>" maxlength="120" placeholder="Riassumi in poche parole"></label>
       <label>😊 Cosa ti è piaciuto?<textarea name="pros" rows="3"><%= v.pros || '' %></textarea></label>
       <label>😐 Cosa si potrebbe migliorare?<textarea name="cons" rows="3"><%= v.cons || '' %></textarea></label>
-      <fieldset class="inline-radios"><legend>Lo ingaggeresti di nuovo?</legend>
+      <fieldset class="inline-radios"><legend>Lo richiameresti per un altro lavoro?</legend>
         <label><input type="radio" name="would_rehire" value="1" <%= v.would_rehire !== 0 ? 'checked' : '' %>> Sì</label>
         <label><input type="radio" name="would_rehire" value="0" <%= v.would_rehire === 0 ? 'checked' : '' %>> No</label>
       </fieldset>

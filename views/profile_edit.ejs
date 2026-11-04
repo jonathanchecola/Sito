@@ -9,15 +9,15 @@
     <label>Titolo professionale*<input name="headline" value="<%= p.headline %>" maxlength="140" placeholder="Es. Agronomo – consulenza su difesa integrata e PSR"></label>
     <label>Presentazione*<textarea name="bio" rows="6" maxlength="4000" placeholder="Esperienza, aziende che segui, zone in cui lavori, come lavori"><%= p.bio %></textarea></label>
     <fieldset><legend>Cosa offri*</legend><div class="check-grid">
-      <% const st = new Set((p.service_types || '').split(',')); Object.entries(SERVICE_TYPES).forEach(([k, t]) => { %><label class="opt"><input type="checkbox" name="service_types" value="<%= k %>" <%= st.has(k) ? 'checked' : '' %>> <%= t.icon %> <strong><%= t.label %></strong> <span class="muted small"><%= t.hint %></span></label><% }) %>
+      <% const st = new Set((p.service_types || '').split(',')); Object.entries(SERVICE_TYPES).forEach(([k, t]) => { %><label class="opt"><input type="checkbox" name="service_types" value="<%= k %>" <%= st.has(k) ? 'checked' : '' %>> <span><%= t.icon %> <strong><%= t.label %></strong><br><span class="muted small"><%= t.hint %></span></span></label><% }) %>
     </div></fieldset>
     <fieldset><legend>Filiere che segui</legend><div class="check-grid">
-      <% const sc = new Set((p.sectors || '').split(',')); SECTORS.forEach(x => { %><label class="opt"><input type="checkbox" name="sectors" value="<%= x.slug %>" <%= sc.has(x.slug) ? 'checked' : '' %>> <%= x.icon %> <%= x.name %></label><% }) %>
+      <% const sc = new Set((p.sectors || '').split(',')); SECTORS.forEach(x => { %><label class="opt"><input type="checkbox" name="sectors" value="<%= x.slug %>" <%= sc.has(x.slug) ? 'checked' : '' %>> <span><%= x.icon %> <%= x.name %></span></label><% }) %>
     </div></fieldset>
     <fieldset><legend>Servizi*</legend><div class="check-grid">
-      <% categories.forEach(c => { %><label class="opt"><input type="checkbox" name="categories" value="<%= c.id %>" <%= selected.has(c.id) ? 'checked' : '' %>> <%= c.icon %> <%= c.name %></label><% }) %>
+      <% categories.forEach(c => { %><label class="opt"><input type="checkbox" name="categories" value="<%= c.id %>" <%= selected.has(c.id) ? 'checked' : '' %>> <span><%= c.icon %> <%= c.name %></span></label><% }) %>
     </div></fieldset>
-    <label>Competenze <span class="muted">(separate da virgola)</span><input name="skills" value="<%= p.skills %>" placeholder="Domanda PAC, Difesa integrata, HACCP"></label>
+    <label><span>Competenze <span class="muted">(separate da virgola)</span></span><input name="skills" value="<%= p.skills %>" placeholder="Domanda PAC, Difesa integrata, HACCP"></label>
 
     <h2>Dove e come lavori</h2>
     <div class="row3">
@@ -44,8 +44,8 @@
     </div>
 
     <h2>Credenziali</h2>
-    <label>Lingue <span class="muted">(separate da virgola)</span><input name="languages" value="<%= p.languages %>"></label>
-    <label>Titoli, iscrizioni ad albi e abilitazioni <span class="muted">(separati da virgola)</span><input name="certifications" value="<%= p.certifications %>"></label>
+    <label><span>Lingue <span class="muted">(separate da virgola)</span></span><input name="languages" value="<%= p.languages %>"></label>
+    <label><span>Titoli, iscrizioni ad albi e abilitazioni <span class="muted">(separati da virgola)</span></span><input name="certifications" value="<%= p.certifications %>"></label>
     <div class="row3">
       <label>Sito web<input type="url" name="website" value="<%= p.website %>" placeholder="https://"></label>
       <label>LinkedIn<input type="url" name="linkedin" value="<%= p.linkedin %>" placeholder="https://linkedin.com/in/…"></label>

@@ -13,8 +13,8 @@
       </div>
       <label>Nome e cognome<input name="name" value="<%= v.name || '' %>" required maxlength="100"></label>
       <label>Email<input type="email" name="email" value="<%= v.email || '' %>" required autocomplete="email"></label>
-      <label>Nome dell’azienda <span class="muted">(facoltativo)</span><input name="company" value="<%= v.company || '' %>" maxlength="120"></label>
-      <label>Password <span class="muted">(min. 8 caratteri)</span><input type="password" name="password" required minlength="8" autocomplete="new-password"></label>
+      <label><span>Nome dell’azienda <span class="muted">(facoltativo)</span></span><input name="company" value="<%= v.company || '' %>" maxlength="120"></label>
+      <label><span>Password <span class="muted">(min. 8 caratteri)</span></span><input type="password" name="password" required minlength="8" autocomplete="new-password"></label>
       <button class="btn primary full">Registrati</button>
     </form>
     <p class="small">Hai già un account? <a href="/accedi">Accedi</a></p>

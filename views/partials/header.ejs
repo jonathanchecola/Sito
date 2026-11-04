@@ -25,7 +25,7 @@
         <form method="post" action="/esci" class="inline"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn-link">Esci</button></form>
       <% } else { %>
         <a href="/accedi">Accedi</a>
-        <a href="/registrati?ruolo=professionista" class="btn wheat">Sei un professionista?</a>
+        <a href="/registrati?ruolo=professionista" class="btn wheat"><span class="hide-sm">Sei un professionista?</span><span class="show-sm">Iscriviti</span></a>
       <% } %>
     </nav>
   </div>
