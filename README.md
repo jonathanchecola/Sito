@@ -1,6 +1,6 @@
 # ProfiliPro
 
-Una piattaforma in stile Booking per **formatori, consulenti e professionisti**: i professionisti si iscrivono e completano il profilo, le aziende li cercano, li confrontano, chiedono la disponibilità e alla fine li **valutano con le stelle**.
+Una piattaforma per trovare **formatori, consulenti e professionisti delle pratiche per le aziende agricole**: i professionisti si iscrivono e completano il profilo, le aziende li cercano, li confrontano, chiedono la disponibilità e alla fine li **valutano con le stelle**.
 
 ## Avvio rapido
 
@@ -8,7 +8,7 @@ Requisiti: Node.js 22.5 o superiore (usa il modulo SQLite incluso in Node, senza
 
 ```bash
 npm install
-npm run seed     # crea il database con 15 professionisti e circa 100 recensioni di esempio
+npm run seed     # crea il database con 16 professionisti del settore agricolo e oltre 120 recensioni
 npm start        # http://localhost:3000
 npm test         # test end-to-end del flusso
 ```
@@ -17,7 +17,7 @@ Account di prova (password `password123`):
 
 | Ruolo | Email |
 |---|---|
-| Azienda (committente) | `laura@acme-spa.it` |
+| Azienda agricola | `laura@lequerce.it` |
 | Professionista | `giulia.ferraro@esempio.it` |
 | Amministratore | `admin@profilipro.it` |
 
