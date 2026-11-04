@@ -163,7 +163,7 @@ h1 { font-size: 1.75rem; } h2 { font-size: 1.3rem; } h3 { font-size: 1.1rem; } h
 .rv-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
 .rv-body h4 { margin: 6px 0 2px; }
 .rv-body .pro, .rv-body .con { margin: 6px 0; }
-.reply { background: #f4f7fb; border-left: 3px solid var(--navy-2); padding: 8px 12px; border-radius: 4px; margin-top: 8px; }
+.reply { background: #f4f7fb; border: 1px solid var(--line); padding: 8px 12px; border-radius: 6px; margin-top: 8px; }
 .reply p { margin: 4px 0 0; }
 .reply-form { display: flex; gap: 8px; align-items: flex-start; margin-top: 8px; }
 .reply-form textarea { flex: 1; }
