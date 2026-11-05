@@ -26,7 +26,7 @@ Account di prova (password `password123`):
 - **Ricerca come su Booking**: barra di ricerca (competenza, luogo, modalità), filtri laterali (categoria, valutazione minima, presenza/remoto, tariffa massima, profili verificati, disponibili ora), ordinamenti e paginazione.
 - **Schede risultato**: punteggio in evidenza ("4.7 Eccellente"), stelle, numero di recensioni, tariffa giornaliera, % di chi lo ingaggerebbe di nuovo, badge "Verificato".
 - **Profilo professionista**: presentazione, competenze, lingue, certificazioni, tariffe, riepilogo delle valutazioni con barre per criterio e distribuzione delle stelle, recensioni con "cosa mi è piaciuto / cosa migliorare" e risposta del professionista.
-- **Richiesta di ingaggio** (l'equivalente della prenotazione): in attesa → accettata/rifiutata → completata (oppure annullata). I contatti diretti si scambiano solo dopo l'accettazione.
+- **Gestione della richiesta**: il professionista invia una proposta con prezzo e calendario delle giornate; entrambi possono spostare o aggiungere date, che l’altra parte conferma; messaggi, avanzamento delle giornate svolte, agenda ed esportazione nel calendario.
 - **Recensioni verificate**: solo chi ha completato un ingaggio può recensire, una sola volta, con 1–5 stelle su 5 criteri.
 - **Preferiti**, **area personale** per azienda e professionista, **pannello admin** per verificare i profili e moderare le recensioni.
 

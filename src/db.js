@@ -16,7 +16,8 @@ function open(file = DB_FILE) {
 
 function migrate(db) {
   const cols = db.prepare("SELECT name FROM pragma_table_info('professionals')").all().map((c) => c.name);
-  if (cols.length && !cols.includes('price_from')) {
+  const reqCols = db.prepare("SELECT name FROM pragma_table_info('requests')").all().map((c) => c.name);
+  if ((cols.length && !cols.includes('price_from')) || (reqCols.length && !reqCols.includes('proposal_price'))) {
     throw new Error('Il database usa uno schema precedente: rigeneralo con "npm run seed".');
   }
   db.exec(`
@@ -96,11 +97,43 @@ function migrate(db) {
       mode            TEXT NOT NULL DEFAULT 'entrambi',
       location        TEXT NOT NULL DEFAULT '',
       budget          INTEGER,
+      -- in_attesa: nuova richiesta · proposta: il professionista ha inviato prezzo e date
+      -- confermata: l'azienda ha accettato · completata / rifiutata / annullata: chiusa
       status          TEXT NOT NULL DEFAULT 'in_attesa'
-                      CHECK (status IN ('in_attesa','accettata','rifiutata','completata','annullata')),
+                      CHECK (status IN ('in_attesa','proposta','confermata','rifiutata','completata','annullata')),
       response_note   TEXT NOT NULL DEFAULT '',
+      proposal_price  INTEGER,
+      proposal_unit   TEXT NOT NULL DEFAULT 'preventivo',
+      proposal_note   TEXT NOT NULL DEFAULT '',
+      proposal_at     TEXT,
       created_at      TEXT NOT NULL DEFAULT (datetime('now')),
       updated_at      TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    -- Giornate/appuntamenti di un incarico. Chi sposta o aggiunge una data la propone,
+    -- l'altra parte la conferma.
+    CREATE TABLE IF NOT EXISTS request_sessions (
+      id          INTEGER PRIMARY KEY,
+      request_id  INTEGER NOT NULL REFERENCES requests(id) ON DELETE CASCADE,
+      date        TEXT NOT NULL,
+      start_time  TEXT NOT NULL DEFAULT '',
+      end_time    TEXT NOT NULL DEFAULT '',
+      location    TEXT NOT NULL DEFAULT '',
+      status      TEXT NOT NULL DEFAULT 'da_confermare'
+                  CHECK (status IN ('da_confermare','confermata','svolta','annullata')),
+      proposed_by TEXT NOT NULL DEFAULT 'pro' CHECK (proposed_by IN ('pro','client')),
+      created_at  TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at  TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    -- Conversazione della richiesta: messaggi scritti e eventi automatici (kind = 'event').
+    CREATE TABLE IF NOT EXISTS request_messages (
+      id          INTEGER PRIMARY KEY,
+      request_id  INTEGER NOT NULL REFERENCES requests(id) ON DELETE CASCADE,
+      user_id     INTEGER REFERENCES users(id) ON DELETE SET NULL,
+      kind        TEXT NOT NULL DEFAULT 'message' CHECK (kind IN ('message','event')),
+      body        TEXT NOT NULL,
+      created_at  TEXT NOT NULL DEFAULT (datetime('now'))
     );
 
     -- Recensione verificata: solo una per ingaggio completato.
@@ -134,6 +167,8 @@ function migrate(db) {
     CREATE INDEX IF NOT EXISTS idx_reviews_prof ON reviews(professional_id);
     CREATE INDEX IF NOT EXISTS idx_requests_prof ON requests(professional_id);
     CREATE INDEX IF NOT EXISTS idx_requests_client ON requests(client_id);
+    CREATE INDEX IF NOT EXISTS idx_sessions_request ON request_sessions(request_id, date);
+    CREATE INDEX IF NOT EXISTS idx_messages_request ON request_messages(request_id, created_at);
   `);
 }
 

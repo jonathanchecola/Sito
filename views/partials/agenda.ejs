@@ -1,0 +1,14 @@
+<section class="card agenda">
+  <h2>Prossime giornate</h2>
+  <% if (!agenda.length) { %><p class="muted small">Nessuna giornata in calendario.</p><% } %>
+  <ul class="agenda-list">
+    <% agenda.forEach(s => { const d = dayParts(s.date); %>
+      <li><a href="/richieste/<%= s.request_id %>#giornate">
+        <div class="cal sm"><span><%= d.dow %></span><strong><%= d.day %></strong><span><%= d.month %></span></div>
+        <div><strong class="small"><%= s.title %></strong><br>
+          <span class="small muted"><%= s.start_time || 'Orario da definire' %> · <%= user.role === 'professional' ? (s.client_company || s.client_name) : s.pro_name %></span>
+          <% if (s.status === 'da_confermare') { %><br><span class="small waiting">Da confermare</span><% } %></div>
+      </a></li>
+    <% }) %>
+  </ul>
+</section>

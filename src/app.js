@@ -5,11 +5,12 @@ const express = require('express');
 const session = require('express-session');
 const bcrypt = require('bcryptjs');
 const M = require('./model');
+const R = require('./requests');
 
 const MODES = { presenza: 'In presenza', remoto: 'Da remoto', entrambi: 'Presenza e remoto' };
 const STATUS = {
-  in_attesa: 'In attesa', accettata: 'Accettata', rifiutata: 'Rifiutata',
-  completata: 'Completata', annullata: 'Annullata',
+  in_attesa: 'Nuova richiesta', proposta: 'Proposta inviata', confermata: 'Confermata',
+  rifiutata: 'Rifiutata', completata: 'Completata', annullata: 'Annullata',
 };
 const COLORS = ['#2f6b3f', '#8a5a2b', '#3d7f8c', '#6b4f8a', '#a3472f', '#4f6b2a', '#7a6a2b', '#2b5d6b'];
 
@@ -47,7 +48,7 @@ function createApp(db, opts = {}) {
       user: req.user, csrf: req.session.csrf, path: req.path, query: req.query,
       flash: req.session.flash || null, MODES, STATUS, CRITERIA: M.CRITERIA, REGIONS: M.REGIONS,
       SERVICE_TYPES: M.SERVICE_TYPES, SECTORS: M.SECTORS, UNITS: M.UNITS,
-      stars, fmtEuro, fmtDate, fmtPrice,
+      stars, fmtEuro, fmtDate, fmtPrice, fmtDay, dayParts, SESSION_STATUS: R.SESSION_STATUS,
     });
     delete req.session.flash;
     if (req.method === 'POST' && req.body._csrf !== req.session.csrf) {
@@ -173,21 +174,21 @@ function createApp(db, opts = {}) {
     if (req.user.role === 'admin') return res.redirect('/admin');
     if (req.user.role === 'professional') {
       const p = M.getByUserId(db, req.user.id);
-      const requests = db.prepare(`
-        SELECT r.*, u.name AS client_name, u.company AS client_company, u.email AS client_email
+      const requests = R.summarize(db, db.prepare(`
+        SELECT r.*, u.name AS client_name, u.company AS client_company
           FROM requests r JOIN users u ON u.id = r.client_id
-         WHERE r.professional_id = ? ORDER BY r.created_at DESC`).all(p.id);
+         WHERE r.professional_id = ? ORDER BY r.updated_at DESC, r.id DESC`).all(p.id), 'pro');
       const reviews = M.reviewsFor(db, p.id);
-      return res.render('dashboard_pro', { title: 'Area personale', p, requests, reviews });
+      return res.render('dashboard_pro', { title: 'Area personale', p, requests, reviews, agenda: R.agendaFor(db, req.user) });
     }
-    const requests = db.prepare(`
+    const requests = R.summarize(db, db.prepare(`
       SELECT r.*, u.name AS pro_name, p.slug AS pro_slug, p.headline AS pro_headline,
              (SELECT id FROM reviews WHERE request_id = r.id) AS review_id
         FROM requests r JOIN professionals p ON p.id = r.professional_id JOIN users u ON u.id = p.user_id
-       WHERE r.client_id = ? ORDER BY r.created_at DESC`).all(req.user.id);
+       WHERE r.client_id = ? ORDER BY r.updated_at DESC, r.id DESC`).all(req.user.id), 'client');
     const favorites = db.prepare(`SELECT professional_id FROM favorites WHERE user_id = ?`).all(req.user.id)
       .map((f) => M.getBySlug(db, db.prepare('SELECT slug FROM professionals WHERE id = ?').get(f.professional_id).slug));
-    res.render('dashboard_client', { title: 'Area personale', requests, favorites });
+    res.render('dashboard_client', { title: 'Area personale', requests, favorites, agenda: R.agendaFor(db, req.user) });
   });
 
   app.get('/area-personale/profilo', requireRole('professional'), (req, res) => {
@@ -267,34 +268,17 @@ function createApp(db, opts = {}) {
       flash(req, 'error', "Indica l'oggetto della richiesta.");
       return res.redirect(`/professionisti/${p.slug}#richiesta`);
     }
-    db.prepare(`INSERT INTO requests (client_id, professional_id, title, description, start_date, days, mode, location, budget)
+    const { lastInsertRowid: rid } = db.prepare(`INSERT INTO requests (client_id, professional_id, title, description, start_date, days, mode, location, budget)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`)
       .run(req.user.id, p.id, title, str(req.body.description, 3000), date(req.body.start_date),
-        int(req.body.days), MODES[req.body.mode] ? req.body.mode : 'entrambi', str(req.body.location, 120), int(req.body.budget));
-    flash(req, 'success', `Richiesta inviata a ${p.name}. Riceverai una risposta nella tua area personale.`);
-    res.redirect('/area-personale');
+        Math.min(int(req.body.days) || 0, 30) || null, MODES[req.body.mode] ? req.body.mode : 'entrambi', str(req.body.location, 120), int(req.body.budget));
+    db.prepare("INSERT INTO request_messages (request_id, user_id, kind, body) VALUES (?, ?, 'event', ?)")
+      .run(rid, req.user.id, `${req.user.name.split(' ')[0]} ha inviato la richiesta.`);
+    flash(req, 'success', `Richiesta inviata a ${p.name}. Qui puoi seguirla, scrivere messaggi e concordare le date.`);
+    res.redirect(`/richieste/${rid}`);
   });
 
-  app.post('/richieste/:id/stato', requireLogin, (req, res) => {
-    const r = db.prepare(`SELECT r.*, p.user_id AS pro_user_id FROM requests r JOIN professionals p ON p.id = r.professional_id WHERE r.id = ?`).get(req.params.id);
-    if (!r) return res.status(404).render('error', { title: 'Non trovato', message: 'Richiesta inesistente.' });
-    const isPro = r.pro_user_id === req.user.id;
-    const isClient = r.client_id === req.user.id;
-    const to = req.body.status;
-    // Macchina a stati: chi può portare la richiesta in quale stato.
-    const allowed =
-      (isPro && r.status === 'in_attesa' && ['accettata', 'rifiutata'].includes(to)) ||
-      ((isPro || isClient) && r.status === 'accettata' && to === 'completata') ||
-      (isClient && ['in_attesa', 'accettata'].includes(r.status) && to === 'annullata');
-    if (!allowed) {
-      flash(req, 'error', 'Operazione non consentita.');
-      return res.redirect('/area-personale');
-    }
-    db.prepare(`UPDATE requests SET status = ?, response_note = COALESCE(NULLIF(?, ''), response_note), updated_at = datetime('now') WHERE id = ?`)
-      .run(to, str(req.body.note, 1000), r.id);
-    flash(req, 'success', `Richiesta aggiornata: ${STATUS[to]}.`);
-    res.redirect('/area-personale');
-  });
+  R.register(app, db, { requireLogin, flash, str, int, date, UNITS: M.UNITS, fmtDay });
 
   // ---------- Recensioni (solo dopo ingaggio completato) ----------
   const reviewable = (req) => db.prepare(`
@@ -409,6 +393,13 @@ function fmtPrice(price, unit) {
   if (price === 0) return 'Gratuito';
   return `${fmtEuro(price)} / ${M.UNITS[unit] || unit}`;
 }
+const DOW = ['dom', 'lun', 'mar', 'mer', 'gio', 'ven', 'sab'];
+const MON = ['gen', 'feb', 'mar', 'apr', 'mag', 'giu', 'lug', 'ago', 'set', 'ott', 'nov', 'dic'];
+function dayParts(s) {
+  const d = new Date(`${s}T12:00:00Z`);
+  return { dow: DOW[d.getUTCDay()], day: d.getUTCDate(), month: MON[d.getUTCMonth()], year: d.getUTCFullYear() };
+}
+function fmtDay(s) { if (!s) return '—'; const p = dayParts(s); return `${p.dow} ${p.day} ${p.month} ${p.year}`; }
 function fmtDate(s) {
   if (!s) return '—';
   const d = new Date(s.length === 10 ? `${s}T00:00:00` : `${s.replace(' ', 'T')}Z`);

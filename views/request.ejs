@@ -1,0 +1,219 @@
+<%- include('partials/header') %>
+<%
+  const isPro = side === 'pro', isClient = side === 'client';
+  const otherName = isPro ? (r.client_company || r.client_name) : r.pro_name;
+  const otherFirst = isPro ? r.client_name.split(' ')[0] : r.pro_name.split(' ')[0];
+  const steps = [['in_attesa', 'Richiesta'], ['proposta', 'Proposta'], ['confermata', 'Confermata'], ['completata', 'Completata']];
+  const stepIdx = steps.findIndex(([k]) => k === r.status);
+  const closedBad = ['rifiutata', 'annullata'].includes(r.status);
+  const timeLabel = (s) => s.start_time ? s.start_time + (s.end_time ? '–' + s.end_time : '') : 'Orario da definire';
+  const formSessions = r.status === 'proposta' ? sessions.filter(s => s.status !== 'annullata') : [];
+  const proposalRows = formSessions.length ? formSessions.map(s => ({ date: s.date, start_time: s.start_time, end_time: s.end_time, location: s.location }))
+    : draftDates.map(d => ({ date: d, start_time: '09:00', end_time: '17:00', location: r.location }));
+  const totalRows = Math.min(30, Math.max(proposalRows.length + 2, 3));
+%>
+<div class="wrap section">
+  <a class="small" href="/area-personale">‹ Torna all’area personale</a>
+  <div class="req-head">
+    <div>
+      <h1><%= r.title %></h1>
+      <p class="muted"><%= isPro ? 'Richiesta da' : 'Richiesta a' %> <strong><%= otherName %></strong><% if (isClient) { %> · <a href="/professionisti/<%= r.pro_slug %>">vedi profilo</a><% } %> · inviata il <%= fmtDate(r.created_at) %></p>
+    </div>
+    <span class="status big s-<%= r.status %>"><%= STATUS[r.status] %></span>
+  </div>
+
+  <% if (!closedBad) { %>
+    <ol class="stepper" aria-label="Avanzamento della richiesta">
+      <% steps.forEach(([k, l], i) => { %><li class="<%= i < stepIdx ? 'done' : i === stepIdx ? 'now' : '' %>"><span><%= i < stepIdx ? '✓' : i + 1 %></span><%= l %></li><% }) %>
+    </ol>
+  <% } else { %>
+    <div class="flash warn">Questa richiesta è <strong><%= STATUS[r.status].toLowerCase() %></strong>.<% if (r.response_note) { %> Motivo: <%= r.response_note %><% } %></div>
+  <% } %>
+
+  <% if (action) { %><div class="todo-banner">● <strong>Tocca a te:</strong> <%= action.toLowerCase() %>.</div><% } %>
+
+  <div class="req-layout">
+    <div class="req-main-col">
+      <section class="card">
+        <h2>La richiesta</h2>
+        <% if (r.description) { %><p class="prose"><%= r.description %></p><% } %>
+        <dl class="facts-dl">
+          <div><dt>Inizio desiderato</dt><dd><%= r.start_date ? fmtDay(r.start_date) : 'Da concordare' %></dd></div>
+          <div><dt>Giornate richieste</dt><dd><%= r.days || '—' %></dd></div>
+          <div><dt>Modalità</dt><dd><%= MODES[r.mode] %></dd></div>
+          <div><dt>Luogo</dt><dd><%= r.location || '—' %></dd></div>
+          <div><dt>Budget indicativo</dt><dd><%= r.budget ? fmtEuro(r.budget) : '—' %></dd></div>
+        </dl>
+      </section>
+
+      <% if (r.proposal_at) { %>
+      <section class="card proposal">
+        <h2>Proposta di <%= r.pro_name.split(' ')[0] %></h2>
+        <div class="proposal-price"><%= fmtPrice(r.proposal_price, r.proposal_unit) %><small>IVA esclusa · inviata il <%= fmtDate(r.proposal_at) %></small></div>
+        <% if (r.proposal_note) { %><p class="prose"><%= r.proposal_note %></p><% } %>
+        <% if (isClient && r.status === 'proposta') { %>
+          <div class="proposal-actions">
+            <form method="post" action="/richieste/<%= r.id %>/accetta"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn primary big">Accetta la proposta</button></form>
+            <p class="small muted">Vuoi cambiare qualcosa? Proponi altre date qui sotto o scrivi un messaggio a <%= otherFirst %>.</p>
+          </div>
+        <% } %>
+      </section>
+      <% } %>
+
+      <% if (isPro && ['in_attesa', 'proposta'].includes(r.status)) { %>
+      <section class="card">
+        <details class="proposal-form" <%= r.status === 'in_attesa' ? 'open' : '' %>>
+          <summary><h2><%= r.status === 'in_attesa' ? 'Prepara la proposta' : 'Modifica la proposta' %></h2></summary>
+          <form method="post" action="/richieste/<%= r.id %>/proposta" class="stack">
+            <input type="hidden" name="_csrf" value="<%= csrf %>">
+            <div class="row2">
+              <label>Prezzo (€)<input type="number" name="proposal_price" min="0" value="<%= r.proposal_price ?? '' %>"></label>
+              <label>Unità<select name="proposal_unit"><% Object.entries(UNITS).forEach(([k, l]) => { %><option value="<%= k %>" <%= (r.proposal_at ? r.proposal_unit : 'giornata') === k ? 'selected' : '' %>><%= l %></option><% }) %></select></label>
+            </div>
+            <label>Cosa comprende<textarea name="proposal_note" rows="3" placeholder="Attività, materiali, documenti da preparare, cosa serve dall’azienda"><%= r.proposal_note %></textarea></label>
+            <fieldset><legend>Calendario delle giornate</legend>
+              <p class="small muted"><% if (proposalRows.length) { %><%= r.status === 'proposta' ? 'Queste sono le giornate già proposte.' : `Ho preparato ${proposalRows.length} giornat${proposalRows.length === 1 ? 'a' : 'e'} in base alla richiesta, nei giorni feriali dalla data indicata.` %> Modificale come serve; lascia vuota la data delle righe che non usi.<% } else { %>Inserisci le date degli appuntamenti. Per una pratica senza incontri puoi lasciare le righe vuote.<% } %></p>
+              <div class="sess-rows">
+                <div class="sess-row head" aria-hidden="true"><span>Data</span><span>Dalle</span><span>Alle</span><span>Luogo</span></div>
+                <% for (let i = 0; i < totalRows; i++) { const s = proposalRows[i] || {}; %>
+                  <div class="sess-row">
+                    <input type="date" name="sess_date" value="<%= s.date || '' %>" aria-label="Data giornata <%= i + 1 %>">
+                    <input type="time" name="sess_start" value="<%= s.start_time || '' %>" aria-label="Inizio giornata <%= i + 1 %>">
+                    <input type="time" name="sess_end" value="<%= s.end_time || '' %>" aria-label="Fine giornata <%= i + 1 %>">
+                    <input name="sess_location" value="<%= s.location || '' %>" placeholder="In azienda, online…" aria-label="Luogo giornata <%= i + 1 %>">
+                  </div>
+                <% } %>
+              </div>
+            </fieldset>
+            <button class="btn primary big"><%= r.status === 'in_attesa' ? 'Invia la proposta' : 'Invia la proposta aggiornata' %></button>
+          </form>
+        </details>
+      </section>
+      <% } %>
+
+      <section class="card" id="giornate">
+        <div class="section-head">
+          <h2>Giornate</h2>
+          <% if (prog.total) { %><a class="btn-link small" href="/richieste/<%= r.id %>/calendario.ics">📅 Aggiungi al calendario</a><% } %>
+        </div>
+        <% if (prog.total) { %>
+          <div class="progress-line"><div class="bar"><span style="width:<%= prog.pct %>%"></span></div><span class="small"><strong><%= prog.done %></strong> di <%= prog.total %> svolte</span></div>
+        <% } %>
+        <% if (!sessions.length) { %>
+          <p class="muted"><%= r.status === 'in_attesa' ? (isPro ? 'Le date si fissano con la proposta.' : `${otherFirst} proporrà le date insieme al preventivo.`) : 'Nessuna giornata in calendario.' %></p>
+        <% } %>
+        <ul class="sessions">
+          <% sessions.forEach(s => { const d = dayParts(s.date); const mine = s.proposed_by === side; const live = canEditDates && ['da_confermare', 'confermata'].includes(s.status); %>
+            <li class="session ss-<%= s.status %>">
+              <div class="cal"><span><%= d.dow %></span><strong><%= d.day %></strong><span><%= d.month %></span></div>
+              <div class="session-body">
+                <div class="session-top">
+                  <strong><%= timeLabel(s) %></strong>
+                  <span class="sstatus ss-<%= s.status %>"><%= SESSION_STATUS[s.status] %></span>
+                </div>
+                <span class="small muted"><%= s.location || 'Luogo da definire' %><%= d.year !== new Date().getFullYear() ? ' · ' + d.year : '' %></span>
+                <% if (s.status === 'da_confermare') { %>
+                  <span class="small waiting"><%= mine ? `Proposta da te, in attesa di ${otherFirst}` : `Proposta da ${otherFirst}: confermi?` %></span>
+                <% } %>
+                <% if (live && side !== 'admin') { %>
+                  <div class="session-actions">
+                    <% if (s.status === 'da_confermare' && !mine) { %>
+                      <form method="post" action="/richieste/<%= r.id %>/giornate/<%= s.id %>/conferma"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn primary sm">Conferma</button></form>
+                    <% } %>
+                    <% if (isPro && r.status === 'confermata' && s.status === 'confermata' && s.date <= new Date().toISOString().slice(0, 10)) { %>
+                      <form method="post" action="/richieste/<%= r.id %>/giornate/<%= s.id %>/svolta"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn sm">✓ Svolta</button></form>
+                    <% } %>
+                    <details class="move">
+                      <summary class="btn-link small">Sposta</summary>
+                      <form method="post" action="/richieste/<%= r.id %>/giornate/<%= s.id %>/sposta" class="move-form">
+                        <input type="hidden" name="_csrf" value="<%= csrf %>">
+                        <input type="date" name="sess_date" value="<%= s.date %>" required aria-label="Nuova data">
+                        <input type="time" name="sess_start" value="<%= s.start_time %>" aria-label="Dalle">
+                        <input type="time" name="sess_end" value="<%= s.end_time %>" aria-label="Alle">
+                        <input name="sess_location" value="<%= s.location %>" placeholder="Luogo" aria-label="Luogo">
+                        <button class="btn sm">Proponi</button>
+                      </form>
+                    </details>
+                    <form method="post" action="/richieste/<%= r.id %>/giornate/<%= s.id %>/annulla" onsubmit="return confirm('Annullare questa giornata?')"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn-link small danger">Annulla</button></form>
+                  </div>
+                <% } %>
+              </div>
+            </li>
+          <% }) %>
+        </ul>
+        <% if (canEditDates && side !== 'admin') { %>
+          <details class="add-session">
+            <summary class="btn sm">+ Proponi una giornata in più</summary>
+            <form method="post" action="/richieste/<%= r.id %>/giornate" class="move-form">
+              <input type="hidden" name="_csrf" value="<%= csrf %>">
+              <input type="date" name="sess_date" required aria-label="Data">
+              <input type="time" name="sess_start" aria-label="Dalle">
+              <input type="time" name="sess_end" aria-label="Alle">
+              <input name="sess_location" value="<%= r.location %>" placeholder="Luogo" aria-label="Luogo">
+              <button class="btn primary sm">Proponi</button>
+            </form>
+          </details>
+          <p class="small muted">Ogni data spostata o aggiunta va confermata dall’altra parte.</p>
+        <% } %>
+      </section>
+
+      <% if (side !== 'admin') { %>
+      <section class="card closing">
+        <% if (r.status === 'confermata') { %>
+          <% if (canComplete) { %>
+            <form method="post" action="/richieste/<%= r.id %>/completa"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn primary">Segna l’incarico come completato</button></form>
+          <% } else { %>
+            <p class="small muted">Quando tutte le giornate saranno svolte (o annullate) potrai chiudere l’incarico.</p>
+          <% } %>
+        <% } %>
+        <% if (isClient && r.status === 'completata' && !r.review_id) { %>
+          <a class="btn primary" href="/richieste/<%= r.id %>/recensione">★ Lascia una recensione</a>
+        <% } else if (isClient && r.review_id) { %>
+          <p class="ok small">✔ Hai lasciato la recensione per questo incarico.</p>
+        <% } %>
+        <% if (isPro && ['in_attesa', 'proposta'].includes(r.status)) { %>
+          <details><summary class="btn-link danger">Non posso accettare questo incarico</summary>
+            <form method="post" action="/richieste/<%= r.id %>/rifiuta" class="stack tight"><input type="hidden" name="_csrf" value="<%= csrf %>">
+              <input name="note" placeholder="Motivo (facoltativo), es. non sono disponibile in quel periodo"><button class="btn">Rifiuta la richiesta</button></form>
+          </details>
+        <% } %>
+        <% if ((isClient && ['in_attesa', 'proposta', 'confermata'].includes(r.status)) || (isPro && r.status === 'confermata')) { %>
+          <details><summary class="btn-link danger">Annulla l’incarico</summary>
+            <form method="post" action="/richieste/<%= r.id %>/annulla" class="stack tight"><input type="hidden" name="_csrf" value="<%= csrf %>">
+              <input name="note" placeholder="Motivo (facoltativo)"><button class="btn">Conferma l’annullamento</button></form>
+          </details>
+        <% } %>
+      </section>
+      <% } %>
+    </div>
+
+    <aside class="req-side-col">
+      <% if (['confermata', 'completata'].includes(r.status) && side !== 'admin') { %>
+        <section class="card contact">
+          <h3>Contatti di <%= otherFirst %></h3>
+          <a href="mailto:<%= isPro ? r.client_email : r.pro_email %>"><%= isPro ? r.client_email : r.pro_email %></a>
+        </section>
+      <% } %>
+      <section class="card" id="conversazione">
+        <h2>Conversazione</h2>
+        <ol class="thread">
+          <% messages.forEach(m => { const mineMsg = user && m.user_id === user.id; %>
+            <% if (m.kind === 'event') { %>
+              <li class="event"><span><%= m.body %></span><time><%= fmtDate(m.created_at) %></time></li>
+            <% } else { %>
+              <li class="msg <%= mineMsg ? 'mine' : '' %>"><div class="bubble"><p><%= m.body %></p></div><span class="small muted"><%= mineMsg ? 'Tu' : (m.author || '').split(' ')[0] %> · <%= fmtDate(m.created_at) %></span></li>
+            <% } %>
+          <% }) %>
+        </ol>
+        <% if (side !== 'admin') { %>
+          <form method="post" action="/richieste/<%= r.id %>/messaggi" class="msg-form">
+            <input type="hidden" name="_csrf" value="<%= csrf %>">
+            <textarea name="body" rows="3" required maxlength="2000" placeholder="Scrivi a <%= otherFirst %>…" aria-label="Messaggio"></textarea>
+            <button class="btn primary">Invia</button>
+          </form>
+        <% } %>
+      </section>
+    </aside>
+  </div>
+</div>
+<%- include('partials/footer') %>

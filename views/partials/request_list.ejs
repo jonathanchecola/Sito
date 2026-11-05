@@ -1,0 +1,32 @@
+<% if (!requests.length) { %><p class="muted"><%= empty %></p><% } %>
+<% const openOnes = requests.filter(r => r.action || ['in_attesa','proposta','confermata'].includes(r.status));
+   const closed = requests.filter(r => !openOnes.includes(r)); %>
+<% const renderList = (list) => { %>
+<ul class="req-list">
+  <% list.forEach(r => { const other = side === 'pro' ? (r.client_company || r.client_name) : r.pro_name; %>
+    <li>
+      <a class="req-item <%= r.action ? 'has-action' : '' %>" href="/richieste/<%= r.id %>">
+        <div class="req-item-main">
+          <strong><%= r.title %></strong>
+          <span class="small muted"><%= other %> · aggiornata il <%= fmtDate(r.updated_at) %></span>
+          <% if (r.action) { %><span class="todo">● <%= r.action %></span><% } %>
+        </div>
+        <div class="req-item-meta">
+          <% if (r.progress.total) { %>
+            <span class="small"><%= r.progress.done %>/<%= r.progress.total %> giornate svolte</span>
+            <div class="bar"><span style="width:<%= r.progress.pct %>%"></span></div>
+          <% } %>
+          <% if (r.progress.next) { %><span class="small muted">Prossima: <%= fmtDay(r.progress.next.date) %></span><% } %>
+        </div>
+        <span class="status s-<%= r.status %>"><%= STATUS[r.status] %></span>
+        <span class="req-go" aria-hidden="true">›</span>
+      </a>
+    </li>
+  <% }) %>
+</ul>
+<% }; %>
+<% if (requests.length && !openOnes.length) { %><p class="muted small">Nessuna richiesta in corso.</p><% } %>
+<% renderList(openOnes); %>
+<% if (closed.length) { %>
+  <details class="closed-list"><summary class="btn-link small">Concluse e archiviate (<%= closed.length %>)</summary><% renderList(closed); %></details>
+<% } %>

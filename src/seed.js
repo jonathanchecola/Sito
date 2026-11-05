@@ -137,8 +137,11 @@ function seed(db) {
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
     const insSvc = db.prepare('INSERT INTO services (professional_id, position, name, price, unit) VALUES (?, ?, ?, ?, ?)');
     const insPC = db.prepare('INSERT INTO professional_categories (professional_id, category_id) VALUES (?, ?)');
-    const insReq = db.prepare(`INSERT INTO requests (client_id, professional_id, title, description, start_date, days, mode, status, created_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`);
+    const insReq = db.prepare(`INSERT INTO requests (client_id, professional_id, title, description, start_date, days, mode, status, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?9)`);
+    const insMsg = db.prepare('INSERT INTO request_messages (request_id, user_id, kind, body) VALUES (?, ?, ?, ?)');
+    const insMsgAt = db.prepare('INSERT INTO request_messages (request_id, user_id, kind, body, created_at) VALUES (?, ?, ?, ?, ?)');
+    const insReqIdOf = (d, title) => d.prepare('SELECT id FROM requests WHERE title = ?').get(title).id;
     const insRev = db.prepare(`INSERT INTO reviews (request_id, professional_id, client_id, competenza, comunicazione,
       puntualita, qualita_prezzo, professionalita, overall, title, pros, cons, would_rehire, created_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
@@ -178,6 +181,40 @@ function seed(db) {
     insReq.run(clientIds[0], giulia.id, 'Domanda CSR per trattore e impianto di irrigazione',
       'Azienda di 18 ettari a ortofrutta. Vorremmo capire se rientriamo nel bando investimenti e presentare la domanda.', '2027-02-10', null, 'presenza', 'in_attesa',
       new Date().toISOString().slice(0, 19).replace('T', ' '));
+    insMsg.run(insReqIdOf(db, 'Domanda CSR per trattore e impianto di irrigazione'), clientIds[0], 'event', 'Laura ha inviato la richiesta.');
+
+    // Esempi di incarichi in corso, per vedere la gestione delle date.
+    const day = (n) => new Date(Date.now() + n * 864e5).toISOString().slice(0, 10);
+    const ago = (n) => new Date(Date.now() - n * 864e5).toISOString().slice(0, 19).replace('T', ' ');
+    const pid = (slug) => db.prepare('SELECT id FROM professionals WHERE slug = ?').get(slug).id;
+    const uid = (slug) => db.prepare('SELECT user_id FROM professionals WHERE slug = ?').get(slug).user_id;
+    const insSess = db.prepare(`INSERT INTO request_sessions (request_id, date, start_time, end_time, location, status, proposed_by)
+                                VALUES (?, ?, ?, ?, ?, ?, ?)`);
+    const setProposal = db.prepare(`UPDATE requests SET proposal_price = ?, proposal_unit = ?, proposal_note = ?, proposal_at = ?, updated_at = ? WHERE id = ?`);
+
+    // 1) Confermato e in corso: 5 sopralluoghi agronomici, 2 svolti, uno spostato dall'azienda.
+    const sara = Number(insReq.run(clientIds[0], pid('sara-lombardi'), 'Assistenza agronomica: 5 sopralluoghi sul pomodoro',
+      'Pomodoro da industria su 12 ettari. Servono 5 sopralluoghi tra trapianto e raccolta, con indicazioni su concimazione e difesa.',
+      day(-20), 5, 'presenza', 'confermata', ago(25)).lastInsertRowid);
+    setProposal.run(180, 'giornata', 'Ogni sopralluogo comprende visita in campo, relazione scritta e aggiornamento del quaderno di campagna.', ago(24), ago(1), sara);
+    [[day(-14), 'svolta', 'pro'], [day(-6), 'svolta', 'pro'], [day(5), 'confermata', 'pro'], [day(13), 'da_confermare', 'client'], [day(26), 'confermata', 'pro']]
+      .forEach(([d, st, by]) => insSess.run(sara, d, '08:30', '12:30', 'Azienda Agricola Le Querce', st, by));
+    [[uid('sara-lombardi'), 'event', 'Sara ha inviato la proposta con 5 giornate.', ago(24)],
+     [clientIds[0], 'event', 'Laura ha accettato la proposta. Incarico confermato.', ago(23)],
+     [clientIds[0], 'message', 'Buongiorno Sara, il quarto sopralluogo possiamo spostarlo di qualche giorno? Quella settimana siamo in raccolta.', ago(2)],
+     [clientIds[0], 'event', 'Laura propone di spostare il quarto sopralluogo.', ago(2)],
+     [uid('sara-lombardi'), 'message', 'Nessun problema, guardo il calendario e le confermo entro domani.', ago(1)]]
+      .forEach(([u, k, b, t]) => insMsgAt.run(sara, u, k, b, t));
+
+    // 2) Proposta in attesa di risposta dell'azienda: corso patentino in 3 giornate.
+    const luca = Number(insReq.run(clientIds[0], pid('luca-bianchi'), 'Corso patentino fitosanitari per 4 dipendenti',
+      'Quattro operai devono ottenere il patentino prima della prossima stagione. Preferiamo il corso in azienda.',
+      day(20), 3, 'presenza', 'proposta', ago(6)).lastInsertRowid);
+    setProposal.run(180, 'partecipante', 'Corso da 20 ore in 3 giornate presso la vostra azienda, materiale didattico ed esame finale inclusi.', ago(3), ago(3), luca);
+    [day(20), day(22), day(27)].forEach((d) => insSess.run(luca, d, '14:00', '19:00', 'Azienda Agricola Le Querce', 'da_confermare', 'pro'));
+    [[clientIds[0], 'event', 'Laura ha inviato la richiesta.', ago(6)],
+     [uid('luca-bianchi'), 'event', 'Luca ha inviato la proposta con 3 giornate.', ago(3)]]
+      .forEach(([u, k, b, t]) => insMsgAt.run(luca, u, k, b, t));
     db.exec('COMMIT');
   } catch (e) {
     db.exec('ROLLBACK');

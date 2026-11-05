@@ -8,7 +8,7 @@
       <tbody><% professionals.forEach(p => { %>
         <tr><td><a href="/professionisti/<%= p.slug %>"><%= p.name %></a><br><span class="small muted"><%= p.headline %></span></td>
           <td class="small"><%= p.email %></td>
-          <td><span class="status <%= p.published ? 's-accettata' : 's-in_attesa' %>"><%= p.published ? 'Pubblico' : 'Bozza' %></span></td>
+          <td><span class="status <%= p.published ? 's-confermata' : 's-in_attesa' %>"><%= p.published ? 'Pubblico' : 'Bozza' %></span></td>
           <td><form method="post" action="/admin/professionisti/<%= p.id %>/verifica"><input type="hidden" name="_csrf" value="<%= csrf %>">
             <button class="btn <%= p.verified ? '' : 'primary' %>"><%= p.verified ? 'Revoca verifica' : 'Verifica' %></button></form></td></tr>
       <% }) %></tbody>
