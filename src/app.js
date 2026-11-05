@@ -18,6 +18,8 @@ function createApp(db, opts = {}) {
   app.set('view engine', 'ejs');
   app.set('views', path.join(__dirname, '..', 'views'));
   app.disable('x-powered-by');
+  // Online il sito sta dietro un proxy HTTPS: serve per i cookie di sessione sicuri.
+  if (process.env.NODE_ENV === 'production') app.set('trust proxy', 1);
 
   app.use((req, res, next) => {
     res.set('X-Content-Type-Options', 'nosniff');

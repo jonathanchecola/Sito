@@ -31,3 +31,13 @@ Account di prova (password `password123`):
 - **Preferiti**, **area personale** per azienda e professionista, **pannello admin** per verificare i profili e moderare le recensioni.
 
 Il progetto completo (modello dati, regole di punteggio, roadmap) è in [`docs/PROGETTO.md`](docs/PROGETTO.md).
+
+## Pubblicare online per farlo vedere ad altri (Render, gratuito)
+
+1. Crea un account su https://render.com accedendo con GitHub.
+2. Premi **New → Blueprint** e scegli il repository `Sito`. Render legge il file `render.yaml` e configura tutto da solo.
+3. Premi **Apply** e attendi qualche minuto: Render ti dà un indirizzo del tipo `https://profilipro-agricoltura.onrender.com` da condividere.
+
+Note sul piano gratuito:
+- il sito va in pausa dopo circa 15 minuti senza visite: la prima apertura successiva impiega 30–60 secondi;
+- a ogni riavvio i dati tornano quelli di prova (richieste e recensioni aggiunte durante la prova si perdono).

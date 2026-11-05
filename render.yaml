@@ -1,0 +1,18 @@
+# Pubblicazione dimostrativa su Render (piano gratuito).
+# Il database è ricreato con i dati di prova a ogni riavvio del servizio.
+services:
+  - type: web
+    name: profilipro-agricoltura
+    runtime: node
+    plan: free
+    branch: claude/professional-marketplace-platform-ht4elo
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: "22"
+      - key: SESSION_SECRET
+        generateValue: true
