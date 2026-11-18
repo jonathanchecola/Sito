@@ -41,3 +41,10 @@ Il progetto completo (modello dati, regole di punteggio, roadmap) è in [`docs/P
 Note sul piano gratuito:
 - il sito va in pausa dopo circa 15 minuti senza visite: la prima apertura successiva impiega 30–60 secondi;
 - a ogni riavvio i dati tornano quelli di prova (richieste e recensioni aggiunte durante la prova si perdono).
+
+## Demo statica navigabile (un solo file HTML)
+
+```bash
+npm run demo
+```
+Crea `demo/profilipro-demo.html`: si apre con doppio clic in qualsiasi browser, senza installare nulla, e si può mandare a un collega per email. Contiene le pagine del prototipo con i dati di prova. Una barra in alto permette di vederle come visitatore, azienda o professionista. Link, ricerche e accesso funzionano; le azioni che modificano i dati (inviare, confermare, spostare date) sono solo simulate.

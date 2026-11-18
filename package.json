@@ -8,7 +8,8 @@
     "start": "node --no-warnings src/server.js",
     "dev": "node --no-warnings --watch src/server.js",
     "seed": "node --no-warnings src/seed.js",
-    "test": "node --no-warnings --test test/*.test.js"
+    "test": "node --no-warnings --test test/*.test.js",
+    "demo": "node --no-warnings scripts/build-demo.js"
   },
   "engines": {
     "node": ">=22.5"
