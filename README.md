@@ -47,4 +47,4 @@ Note sul piano gratuito:
 ```bash
 npm run demo
 ```
-Crea `demo/profilipro-demo.html`: si apre con doppio clic in qualsiasi browser, senza installare nulla, e si può mandare a un collega per email. Contiene le pagine del prototipo con i dati di prova. Una barra in alto permette di vederle come visitatore, azienda o professionista. Link, ricerche e accesso funzionano; le azioni che modificano i dati (inviare, confermare, spostare date) sono solo simulate.
+Crea `demo/profilipro-demo.html` (più `demo/profilipro-demo-online.html`, la stessa demo pronta da pubblicare come pagina online): si apre con doppio clic in qualsiasi browser, senza installare nulla, e si può mandare a un collega per email. Contiene le pagine del prototipo con i dati di prova. Una barra in alto permette di vederle come visitatore, azienda o professionista. Link, ricerche e accesso funzionano; le azioni che modificano i dati (inviare, confermare, spostare date) sono solo simulate.

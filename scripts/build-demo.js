@@ -99,6 +99,11 @@ async function main() {
   fs.mkdirSync(outDir, { recursive: true });
   const out = path.join(outDir, 'profilipro-demo.html');
   fs.writeFileSync(out, html);
+  const head = html.match(/<head>([\s\S]*?)<\/head>/)[1]
+    .replace(/<meta charset[^>]*>\s*/, '').replace(/<meta name="viewport"[^>]*>\s*/, '')
+    .replace(/<title>.*?<\/title>/, '<title>ProfiliPro Agricoltura</title>');
+  const body = html.match(/<body>([\s\S]*)<\/body>/)[1];
+  fs.writeFileSync(path.join(outDir, 'profilipro-demo-online.html'), `${head.trim()}\n${body.trim()}\n`);
   console.log(`Demo scritta in ${out} (${Math.round(html.length / 1024)} KB)`);
 }
 
@@ -111,7 +116,9 @@ const TEMPLATE = `<!doctype html>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Figtree:wght@400;500;600;700&display=swap">
 <style>/*CSS*/
-.demo-bar { position: sticky; top: 0; z-index: 50; background: var(--forest); color: #fff; font-size: .85rem; }
+.demo-back { font: inherit; font-weight: 700; background: rgba(255,255,255,.12); color: #fff; border: 0; border-radius: 999px; padding: 4px 12px; cursor: pointer; }
+.demo-back:disabled { opacity: .4; cursor: default; }
+.demo-bar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 50; background: var(--forest); color: #fff; font-size: .85rem; }
 .demo-bar .wrap { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding-top: 8px; padding-bottom: 8px; }
 .demo-bar strong { color: var(--wheat); }
 .demo-roles { display: flex; gap: 6px; flex-wrap: wrap; }
@@ -124,7 +131,7 @@ const TEMPLATE = `<!doctype html>
 </style>
 </head>
 <body>
-<div class="demo-bar"><div class="wrap"><strong>Demo navigabile</strong><span>Guarda come:</span><div class="demo-roles" id="roles"></div><span class="demo-note">Le azioni che modificano i dati sono simulate</span></div></div>
+<div class="demo-bar"><div class="wrap"><button type="button" class="demo-back" id="back" disabled>‹ Indietro</button><strong>Demo navigabile</strong><span>Guarda come:</span><div class="demo-roles" id="roles"></div><span class="demo-note">Le azioni che modificano i dati sono simulate</span></div></div>
 <div id="chrome-header"></div>
 <main id="page"></main>
 <div id="chrome-footer"></div>
@@ -159,11 +166,11 @@ const TEMPLATE = `<!doctype html>
       box.appendChild(b);
     });
   }
+  var history = [];
+  var current = null;
   function render() {
-    var h = location.hash.slice(1) || '/visitatore/';
-    var m = h.match(/^\\/([^/]+)(\\/.*)$/);
-    var r = m && D.pages[m[1]] ? m[1] : 'visitatore';
-    var full = m ? m[2] : '/';
+    var r = D.pages[current.role] ? current.role : 'visitatore';
+    var full = current.url || '/';
     var anchor = full.indexOf('#') >= 0 ? full.slice(full.indexOf('#') + 1) : '';
     var url = norm(full.split('#')[0]);
     var page = findPage(r, url);
@@ -177,7 +184,18 @@ const TEMPLATE = `<!doctype html>
     var target = anchor && document.getElementById(anchor);
     if (target) target.scrollIntoView(); else window.scrollTo(0, 0);
   }
-  function go(r, url) { location.hash = '/' + r + url; }
+  function go(r, url) {
+    if (current) history.push(current);
+    current = { role: r, url: url };
+    document.getElementById('back').disabled = !history.length;
+    render();
+  }
+  document.getElementById('back').onclick = function () {
+    if (!history.length) return;
+    current = history.pop();
+    this.disabled = !history.length;
+    render();
+  };
 
   document.addEventListener('click', function (e) {
     var a = e.target.closest('a[href]');
@@ -221,8 +239,7 @@ const TEMPLATE = `<!doctype html>
     toast('Azione simulata: nel prototipo vero questa operazione viene salvata e l’altra parte la vede nella sua area personale.');
   }, true);
 
-  window.addEventListener('hashchange', render);
-  render();
+  go('visitatore', '/');
 })();
 </script>
 </body>
