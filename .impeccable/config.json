@@ -11,6 +11,15 @@
         ],
         "createdAt": "2026-11-04T22:17:51.141Z",
         "reason": "Claude: functional half-star fill in rating stars, not decorative gradient text"
+      },
+      {
+        "rule": "overused-font",
+        "value": "fraunces",
+        "files": [
+          "scripts/build-demo.js"
+        ],
+        "createdAt": "2026-11-18T08:58:42.246Z",
+        "reason": "Claude: the static demo must reproduce the site's existing typography (Fraunces is loaded in views/partials/header.ejs)"
       }
     ]
   }
